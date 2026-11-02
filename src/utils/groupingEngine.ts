@@ -16,6 +16,61 @@ import {
 
 
 /**
+ * Regional facility supervisors who are ONLY allowed to evaluate staff
+ * from their own branch. They must NOT appear on panels for staff at
+ * other facilities, even during workload-balancing passes.
+ *
+ * Head-office managers (e.g. Alex Baguma, PC) are NOT listed here because
+ * they legitimately oversee cross-facility staff per the appraisal document.
+ */
+const REGIONAL_FACILITY_SUPERVISORS: { nameFragment: string; facility: string }[] = [
+  { nameFragment: 'tumusiime', facility: 'Jinja' },
+  { nameFragment: 'nairima',   facility: 'Mbale' },
+  { nameFragment: 'atine',     facility: 'Gulu' },
+  { nameFragment: 'nimaro',    facility: 'Arua' },
+  { nameFragment: 'laker',     facility: 'Arua' },
+  { nameFragment: 'sserunjoji', facility: 'Fort Portal' },
+  { nameFragment: 'sserunjogi', facility: 'Fort Portal' },
+  { nameFragment: 'birungi',   facility: 'Mbarara' },
+];
+
+/**
+ * Returns the facility this person is restricted to evaluating (if any).
+ * Regional facility supervisors may only sit on panels for their own branch.
+ * Returns null for everyone else (no restriction).
+ */
+function getReviewerFacilityRestriction(reviewer: Person): string | null {
+  const nameLower = reviewer.name.toLowerCase().replace(/[^a-z]/g, '');
+  for (const entry of REGIONAL_FACILITY_SUPERVISORS) {
+    if (nameLower.includes(entry.nameFragment)) {
+      return entry.facility;
+    }
+  }
+  return null;
+}
+
+/**
+ * Hard eligibility check: can `reviewer` sit on the review panel for `reviewee`?
+ * Enforces both the non-supervisor same-facility rule AND the regional supervisor restriction.
+ */
+function canReviewerEvaluate(reviewer: Person, reviewee: Person): boolean {
+  // Rule 1 (existing): non-supervisors only evaluate within their own facility
+  if (!isPersonSupervisor(reviewee)) {
+    if (getPersonFacility(reviewer) !== getPersonFacility(reviewee)) {
+      return false;
+    }
+  }
+
+  // Rule 2 (new): regional facility supervisors only evaluate their own branch
+  const restriction = getReviewerFacilityRestriction(reviewer);
+  if (restriction !== null && restriction !== getPersonFacility(reviewee)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Seeded pseudo-random number generator (Mulberry32)
  */
 function createRng(seed: number) {
@@ -169,12 +224,14 @@ export function generateAllocations(
       candidates = candidates.filter((p) => p.id !== designatedSupervisorPerson!.id);
     }
 
-    // CRITICAL FACILITY RULE:
-    // If reviewee is a NON-SUPERVISOR, their peer reviewers MUST strictly be colleagues from their own facility!
-    if (!isRevieweeSupervisor) {
-      const facilityPeers = candidates.filter((p) => getPersonFacility(p) === revieweeFacility);
-      if (facilityPeers.length > 0) {
-        candidates = facilityPeers;
+    // CRITICAL FACILITY RULES:
+    // 1. Non-supervisors: reviewers must come from the same facility.
+    // 2. Regional facility supervisors (Tumusiime, Nairima, Atine, Nimaro/Laker,
+    //    Sserunjogi, Birungi) may ONLY evaluate staff from their own branch.
+    {
+      const eligible = candidates.filter((p) => canReviewerEvaluate(p, reviewee));
+      if (eligible.length > 0) {
+        candidates = eligible;
       }
     }
 
@@ -316,10 +373,8 @@ export function generateAllocations(
       (p) => p.id !== reviewee.id && !currentMembers.includes(p.id)
     );
 
-    // Respect facility rule for non-supervisors
-    if (!isPersonSupervisor(reviewee)) {
-      candidatePool = candidatePool.filter((p) => getPersonFacility(p) === getPersonFacility(reviewee));
-    }
+    // Respect facility rules: non-supervisor same-facility rule + regional supervisor restriction
+    candidatePool = candidatePool.filter((p) => canReviewerEvaluate(p, reviewee));
 
     if (candidatePool.length === 0) continue;
 
@@ -374,10 +429,11 @@ export function generateAllocations(
       const uCount = reviewCounts[underPerson.id] || 0;
 
       // Find an eligible group where underPerson is not the reviewee and not already a member,
-      // and if reviewee r is a non-supervisor, underPerson must belong to the same facility
+      // and if reviewee r is a non-supervisor, underPerson must belong to the same facility;
+      // also regional facility supervisors may only review their own branch.
       const eligibleReviewees = shuffledReviewees.filter((r) => {
         if (r.id === underPerson.id || groupMembersMap[r.id].includes(underPerson.id)) return false;
-        if (!isPersonSupervisor(r) && getPersonFacility(underPerson) !== getPersonFacility(r)) return false;
+        if (!canReviewerEvaluate(underPerson, r)) return false;
         return true;
       });
 
@@ -460,7 +516,8 @@ export function generateAllocations(
           r.id !== minP.id &&
           groupMembersMap[r.id].includes(maxP.id) &&
           !groupMembersMap[r.id].includes(minP.id) &&
-          mandatorySupervisorMap[r.id]?.supervisorPerson.id !== maxP.id
+          mandatorySupervisorMap[r.id]?.supervisorPerson.id !== maxP.id &&
+          canReviewerEvaluate(minP, r) // enforce facility restriction on incoming reviewer
       );
 
       if (groupToSwap) {
