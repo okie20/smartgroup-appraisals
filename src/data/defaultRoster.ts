@@ -44,197 +44,201 @@ export const DEFAULT_CLUSTERS: DepartmentCluster[] = [
 ];
 
 /**
- * 135-Person Roster modeled directly after Annex A 18 specified job posts
- * and the company's 7 branch facilities:
- * Kampala (HQ), Mbarara, Jinja, Gulu, Mbale, Arua, Fort Portal.
+ * Roster sourced directly from the 2026 KAMPALA Rotation schedule and
+ * regional branch staff lists provided by management.
+ *
+ * Kampala HQ covers: Reception, Enrolment, Approval, Order Batching &
+ * Personalisation, Quality Assurance, Shipment, DL Receipt & Issuance,
+ * Customer Care, Stock Control, VIP, Production, Supervisors, Technical,
+ * and Call Center.
+ *
+ * Regional branches: Jinja, Mbale, Gulu, Arua, Fort Portal (Mbarara inferred).
  *
  * Rules:
- * - isSupervisor: true -> Eligible for cross-facility management panels and Annex A supervisory reviews
+ * - isSupervisor: true  -> cross-facility management panels; Annex A supervisory reviews
  * - isSupervisor: false -> STRICTLY reviewed only by staff from their same facility
  */
 export const DEFAULT_ROSTER: Person[] = [
-  // -------------------------------------------------------------------------
-  // 1. Project Coordination & Transport (7 people) - Kampala HQ
-  // -------------------------------------------------------------------------
-  { id: 'EMP-001', name: 'Dr. Arthur Mukasa', department: 'Project Coordination & Transport', role: 'Project Coordinator', email: 'arthur.mukasa@org.project', facility: 'Kampala', isSupervisor: true },
-  { id: 'EMP-002', name: 'Grace Namatovu', department: 'Project Coordination & Transport', role: 'PA to PC', email: 'grace.namatovu@org.project', facility: 'Kampala', isSupervisor: false }, // Annex A #8
-  { id: 'EMP-003', name: 'Patrick Ochieng', department: 'Project Coordination & Transport', role: 'Project Driver', email: 'patrick.ochieng@org.project', facility: 'Kampala', isSupervisor: false }, // Annex A #11
-  { id: 'EMP-004', name: 'Dennis Katongole', department: 'Project Coordination & Transport', role: 'Project Driver', email: 'dennis.katongole@org.project', facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-005', name: 'Samuel Byaruhanga', department: 'Project Coordination & Transport', role: 'Project Driver', email: 'samuel.byaruhanga@org.project', facility: 'Jinja', isSupervisor: false },
-  { id: 'EMP-006', name: 'Joan Nanteza', department: 'Project Coordination & Transport', role: 'Coordination Assistant', email: 'joan.nanteza@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-007', name: 'Moses Wandera', department: 'Project Coordination & Transport', role: 'Logistics Fleet Driver', email: 'moses.wandera@org.project', facility: 'Gulu', isSupervisor: false },
 
-  // -------------------------------------------------------------------------
-  // 2. Operations & Field Services (22 people)
-  // -------------------------------------------------------------------------
-  { id: 'EMP-008', name: 'Robert Kasule', department: 'Operations & Field Services', role: 'Head of Operations', email: 'robert.kasule@org.project', facility: 'Kampala', isSupervisor: true }, // Annex A #5
-  { id: 'EMP-009', name: 'Beatrice Nabirye', department: 'Operations & Field Services', role: 'Field Operations Manager', email: 'beatrice.nabirye@org.project', facility: 'Kampala', isSupervisor: true }, // Annex A #4
-  { id: 'EMP-010', name: 'Richard Tumusiime', department: 'Operations & Field Services', role: 'Mobile Enrolment', email: 'richard.tumusiime@org.project', facility: 'Mbarara', isSupervisor: false }, // Annex A #7
-  { id: 'EMP-011', name: 'Irene Kansiime', department: 'Operations & Field Services', role: 'Mobile Enrolment', email: 'irene.kansiime@org.project', facility: 'Jinja', isSupervisor: false },
-  { id: 'EMP-012', name: 'Gerald Mwesigwa', department: 'Operations & Field Services', role: 'Mobile Enrolment Officer', email: 'gerald.mwesigwa@org.project', facility: 'Gulu', isSupervisor: false },
-  { id: 'EMP-013', name: 'Dorothy Akello', department: 'Operations & Field Services', role: 'Mobile Enrolment Officer', email: 'dorothy.akello@org.project', facility: 'Mbale', isSupervisor: false },
-  { id: 'EMP-014', name: 'Francis Okot', department: 'Operations & Field Services', role: 'Operations Field Supervisor', email: 'francis.okot@org.project', facility: 'Arua', isSupervisor: true },
-  { id: 'EMP-015', name: 'Sarah Nalwanga', department: 'Operations & Field Services', role: 'Operations Field Specialist', email: 'sarah.nalwanga@org.project', facility: 'Fort Portal', isSupervisor: false },
-  { id: 'EMP-016', name: 'David Semakula', department: 'Operations & Field Services', role: 'Enrolment Operator', email: 'david.semakula@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-017', name: 'Lydia Kobusinge', department: 'Operations & Field Services', role: 'Enrolment Operator', email: 'lydia.kobusinge@org.project', facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-018', name: 'Timothy Opolot', department: 'Operations & Field Services', role: 'Enrolment Operator', email: 'timothy.opolot@org.project', facility: 'Jinja', isSupervisor: false },
-  { id: 'EMP-019', name: 'Agnes Mbabazi', department: 'Operations & Field Services', role: 'Enrolment Operator', email: 'agnes.mbabazi@org.project', facility: 'Gulu', isSupervisor: false },
-  { id: 'EMP-020', name: 'Victor Senyonga', department: 'Operations & Field Services', role: 'Enrolment Operator', email: 'victor.senyonga@org.project', facility: 'Mbale', isSupervisor: false },
-  { id: 'EMP-021', name: 'Priscilla Asimwe', department: 'Operations & Field Services', role: 'Enrolment Operator', email: 'priscilla.asimwe@org.project', facility: 'Arua', isSupervisor: false },
-  { id: 'EMP-022', name: 'Daniel Kigozi', department: 'Operations & Field Services', role: 'Enrolment Operator', email: 'daniel.kigozi@org.project', facility: 'Fort Portal', isSupervisor: false },
-  { id: 'EMP-023', name: 'Harriet Birungi', department: 'Operations & Field Services', role: 'Enrolment Operator', email: 'harriet.birungi@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-024', name: 'Geoffrey Lubega', department: 'Operations & Field Services', role: 'Enrolment Operator', email: 'geoffrey.lubega@org.project', facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-025', name: 'Catherine Nambi', department: 'Operations & Field Services', role: 'Field Deployment Officer', email: 'catherine.nambi@org.project', facility: 'Jinja', isSupervisor: false },
-  { id: 'EMP-026', name: 'Peter Mayanja', department: 'Operations & Field Services', role: 'Field Deployment Officer', email: 'peter.mayanja@org.project', facility: 'Gulu', isSupervisor: false },
-  { id: 'EMP-027', name: 'Gloria Kyomugisha', department: 'Operations & Field Services', role: 'Operations Support Officer', email: 'gloria.kyomugisha@org.project', facility: 'Mbale', isSupervisor: false },
-  { id: 'EMP-028', name: 'Edward Wamala', department: 'Operations & Field Services', role: 'Operations Support Officer', email: 'edward.wamala@org.project', facility: 'Arua', isSupervisor: false },
-  { id: 'EMP-029', name: 'Christine Auma', department: 'Operations & Field Services', role: 'Operations Liaison Officer', email: 'christine.auma@org.project', facility: 'Fort Portal', isSupervisor: false },
+  // ═══════════════════════════════════════════════════════════════════════
+  // KAMPALA HQ — SUPERVISORS & MANAGERS
+  // ═══════════════════════════════════════════════════════════════════════
 
-  // -------------------------------------------------------------------------
-  // 3. Facility Supervision (19 people) - Distributed Across All 7 Facilities
-  // -------------------------------------------------------------------------
-  { id: 'EMP-030', name: 'Solomon Ssebunya', department: 'Facility Supervision', role: 'Facility Supervisor', email: 'solomon.ssebunya@org.project', facility: 'Kampala', isSupervisor: true }, // Annex A #3
-  { id: 'EMP-031', name: 'Evelyn Nakato', department: 'Facility Supervision', role: 'Facility Supervisor', email: 'evelyn.nakato@org.project', facility: 'Mbarara', isSupervisor: true },
-  { id: 'EMP-032', name: 'Emmanuel Baguma', department: 'Facility Supervision', role: 'Facility Supervisor', email: 'emmanuel.baguma@org.project', facility: 'Jinja', isSupervisor: true },
-  { id: 'EMP-033', name: 'Fiona Babirye', department: 'Facility Supervision', role: 'Facility Supervisor', email: 'fiona.babirye@org.project', facility: 'Gulu', isSupervisor: true },
-  { id: 'EMP-034', name: 'Julius Mugisha', department: 'Facility Supervision', role: 'Facility Supervisor', email: 'julius.mugisha@org.project', facility: 'Mbale', isSupervisor: true },
-  { id: 'EMP-035', name: 'Winifred Nansubuga', department: 'Facility Supervision', role: 'Facility Supervisor', email: 'winifred.nansubuga@org.project', facility: 'Arua', isSupervisor: true },
-  { id: 'EMP-036', name: 'Christopher Musoke', department: 'Facility Supervision', role: 'Facility Supervisor', email: 'christopher.musoke@org.project', facility: 'Fort Portal', isSupervisor: true },
-  { id: 'EMP-037', name: 'Diana Atuhaire', department: 'Facility Supervision', role: 'Facility Supervisor', email: 'diana.atuhaire@org.project', facility: 'Mbarara', isSupervisor: true },
-  { id: 'EMP-038', name: 'Andrew Otim', department: 'Facility Supervision', role: 'Facility Supervisor', email: 'andrew.otim@org.project', facility: 'Gulu', isSupervisor: true },
-  { id: 'EMP-039', name: 'Brenda Namusisi', department: 'Facility Supervision', role: 'Facility Supervisor', email: 'brenda.namusisi@org.project', facility: 'Jinja', isSupervisor: true },
-  { id: 'EMP-040', name: 'Charles Lukwago', department: 'Facility Supervision', role: 'Facility Supervisor', email: 'charles.lukwago@org.project', facility: 'Kampala', isSupervisor: true },
-  { id: 'EMP-041', name: 'Jackline Namugwanya', department: 'Facility Supervision', role: 'Facility Supervisor', email: 'jackline.namugwanya@org.project', facility: 'Mbale', isSupervisor: true },
-  { id: 'EMP-042', name: 'Brian Kaggwa', department: 'Facility Supervision', role: 'Assistant Facility Supervisor', email: 'brian.kaggwa@org.project', facility: 'Arua', isSupervisor: false },
-  { id: 'EMP-043', name: 'Racheal Nabukalu', department: 'Facility Supervision', role: 'Assistant Facility Supervisor', email: 'racheal.nabukalu@org.project', facility: 'Fort Portal', isSupervisor: false },
-  { id: 'EMP-044', name: 'Henry Sekitto', department: 'Facility Supervision', role: 'Assistant Facility Supervisor', email: 'henry.sekitto@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-045', name: 'Mercy Ainembabazi', department: 'Facility Supervision', role: 'Facility Operations Officer', email: 'mercy.ainembabazi@org.project', facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-046', name: 'Ronald Ssempijja', department: 'Facility Supervision', role: 'Facility Operations Officer', email: 'ronald.ssempijja@org.project', facility: 'Jinja', isSupervisor: false },
-  { id: 'EMP-047', name: 'Stella Akello', department: 'Facility Supervision', role: 'Facility Operations Officer', email: 'stella.akello@org.project', facility: 'Gulu', isSupervisor: false },
-  { id: 'EMP-048', name: 'Fredrick Kato', department: 'Facility Supervision', role: 'Facility Field Inspector', email: 'fredrick.kato@org.project', facility: 'Fort Portal', isSupervisor: false },
+  // Head-office supervisors named in the appraisal document
+  { id: 'EMP-S01', name: 'Alex Baguma',         department: 'Operations & Field Services',  role: 'Head of Operations',        email: 'alex.baguma@org.project',         facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S02', name: 'Nantume Catherine',   department: 'Communications & PR',           role: 'Communications Manager',    email: 'nantume.catherine@org.project',   facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S03', name: 'Nalwanga Doris',      department: 'Customer Care & Front Office',  role: 'Customer Care Supervisor',  email: 'nalwanga.doris@org.project',      facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S04', name: 'Ingabire Pamella',    department: 'Operations & Field Services',   role: 'Field Operations Manager',  email: 'ingabire.pamella@org.project',    facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S05', name: 'Catherine Komujuni',  department: 'Operations & Field Services',   role: 'Operations Supervisor',     email: 'catherine.komujuni@org.project',  facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S06', name: 'Clare Tukahiirwa',    department: 'Technical & IT Support',        role: 'System Support Manager',    email: 'clare.tukahiirwa@org.project',    facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S07', name: 'Dickson Muhangi',     department: 'Technical & IT Support',        role: 'Production Manager',        email: 'dickson.muhangi@org.project',     facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S08', name: 'Basuna Julius',       department: 'Quality Assurance',             role: 'Quality Assurance Manager', email: 'basuna.julius@org.project',       facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S09', name: 'Peterson Mandera',    department: 'Operations & Field Services',   role: 'Mobile Enrolment',          email: 'peterson.mandera@org.project',    facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S10', name: 'Dan Lubega',          department: 'Administration & Stores',       role: 'Stock Controller',          email: 'dan.lubega@org.project',          facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S11', name: 'Nalubowa Victoria',   department: 'Project Coordination & Transport', role: 'PA to PC',              email: 'nalubowa.victoria@org.project',   facility: 'Kampala', isSupervisor: true },
 
-  // -------------------------------------------------------------------------
-  // 4. Technical & IT Support (17 people)
-  // -------------------------------------------------------------------------
-  { id: 'EMP-049', name: 'Eng. Isaac Kyeyune', department: 'Technical & IT Support', role: 'IT Coordinator', email: 'isaac.kyeyune@org.project', facility: 'Kampala', isSupervisor: true }, // Annex A #6
-  { id: 'EMP-050', name: 'Kenneth Muhwezi', department: 'Technical & IT Support', role: 'System Support Manager', email: 'kenneth.muhwezi@org.project', facility: 'Kampala', isSupervisor: true }, // Annex A #17
-  { id: 'EMP-051', name: 'Allan Wasswa', department: 'Technical & IT Support', role: 'Technical Team', email: 'allan.wasswa@org.project', facility: 'Mbarara', isSupervisor: false }, // Annex A #18
-  { id: 'EMP-052', name: 'Miriam Nakimera', department: 'Technical & IT Support', role: 'Technical Team', email: 'miriam.nakimera@org.project', facility: 'Jinja', isSupervisor: false },
-  { id: 'EMP-053', name: 'Simon Baluku', department: 'Technical & IT Support', role: 'Technical Team', email: 'simon.baluku@org.project', facility: 'Gulu', isSupervisor: false },
-  { id: 'EMP-054', name: 'Janet Nankya', department: 'Technical & IT Support', role: 'Technical Team', email: 'janet.nankya@org.project', facility: 'Mbale', isSupervisor: false },
-  { id: 'EMP-055', name: 'Joseph Okumu', department: 'Technical & IT Support', role: 'Technical Team', email: 'joseph.okumu@org.project', facility: 'Arua', isSupervisor: false },
-  { id: 'EMP-056', name: 'Clare Nabatanzi', department: 'Technical & IT Support', role: 'Systems Infrastructure Engineer', email: 'clare.nabatanzi@org.project', facility: 'Fort Portal', isSupervisor: false },
-  { id: 'EMP-057', name: 'Stephen Kibet', department: 'Technical & IT Support', role: 'Network Security Engineer', email: 'stephen.kibet@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-058', name: 'Annet Tumuhimbise', department: 'Technical & IT Support', role: 'Database Administrator', email: 'annet.tumuhimbise@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-059', name: 'George Bwambale', department: 'Technical & IT Support', role: 'Enrolment Hardware Technician', email: 'george.bwambale@org.project', facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-060', name: 'Hellen Namutebi', department: 'Technical & IT Support', role: 'Biometric Systems Technician', email: 'hellen.namutebi@org.project', facility: 'Jinja', isSupervisor: false },
-  { id: 'EMP-061', name: 'Dennis Twinomujuni', department: 'Technical & IT Support', role: 'Field IT Support Technician', email: 'dennis.twinomujuni@org.project', facility: 'Gulu', isSupervisor: false },
-  { id: 'EMP-062', name: 'Sharon Kemigisha', department: 'Technical & IT Support', role: 'Software Application Support', email: 'sharon.kemigisha@org.project', facility: 'Mbale', isSupervisor: false },
-  { id: 'EMP-063', name: 'Benjamin Lutwama', department: 'Technical & IT Support', role: 'Workstation Support Specialist', email: 'benjamin.lutwama@org.project', facility: 'Arua', isSupervisor: false },
-  { id: 'EMP-064', name: 'Patricia Nalubega', department: 'Technical & IT Support', role: 'Production Systems Engineer', email: 'patricia.nalubega@org.project', facility: 'Fort Portal', isSupervisor: false },
-  { id: 'EMP-065', name: 'Ivan Byamugisha', department: 'Technical & IT Support', role: 'Production Systems Engineer', email: 'ivan.byamugisha@org.project', facility: 'Kampala', isSupervisor: false },
+  // ═══════════════════════════════════════════════════════════════════════
+  // KAMPALA HQ — RECEPTION (Supervisor: Catherine Komujuni)
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-R01', name: 'Daniel Ssesanga',     department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'daniel.ssesanga@org.project',     facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-R02', name: 'Nancy Nambi',         department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'nancy.nambi@org.project',         facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-R03', name: 'Patricia Akiror',     department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'patricia.akiror@org.project',     facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-R04', name: 'Joshua Muwanguzi',    department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'joshua.muwanguzi@org.project',    facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-R05', name: 'Vanessa Kaitesi',     department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'vanessa.kaitesi@org.project',     facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-R06', name: 'Dison Galandi',       department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'dison.galandi@org.project',       facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-R07', name: 'Martha Wanyama',      department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'martha.wanyama@org.project',      facility: 'Kampala', isSupervisor: false },
 
-  // -------------------------------------------------------------------------
-  // 5. Customer Care & Front Office (16 people)
-  // -------------------------------------------------------------------------
-  { id: 'EMP-066', name: 'Judith Namubiru', department: 'Customer Care & Front Office', role: 'Customer Care Supervisor', email: 'judith.namubiru@org.project', facility: 'Kampala', isSupervisor: true }, // Annex A #2
-  { id: 'EMP-067', name: 'Hassan Ssebaggala', department: 'Customer Care & Front Office', role: 'Customer Care Rep', email: 'hassan.ssebaggala@org.project', facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-068', name: 'Peninah Alimo', department: 'Customer Care & Front Office', role: 'Customer Care Rep', email: 'peninah.alimo@org.project', facility: 'Jinja', isSupervisor: false },
-  { id: 'EMP-069', name: 'Denis Kibuuka', department: 'Customer Care & Front Office', role: 'Customer Care Rep', email: 'denis.kibuuka@org.project', facility: 'Gulu', isSupervisor: false },
-  { id: 'EMP-070', name: 'Faith Kyomuhendo', department: 'Customer Care & Front Office', role: 'Customer Care Rep', email: 'faith.kyomuhendo@org.project', facility: 'Mbale', isSupervisor: false },
-  { id: 'EMP-071', name: 'Martin Ssali', department: 'Customer Care & Front Office', role: 'Customer Care Rep', email: 'martin.ssali@org.project', facility: 'Arua', isSupervisor: false },
-  { id: 'EMP-072', name: 'Olivia Namukwaya', department: 'Customer Care & Front Office', role: 'Call Centre Rep', email: 'olivia.namukwaya@org.project', facility: 'Fort Portal', isSupervisor: false },
-  { id: 'EMP-073', name: 'Brian Odong', department: 'Customer Care & Front Office', role: 'Call Centre Rep', email: 'brian.odong@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-074', name: 'Leah Nakalema', department: 'Customer Care & Front Office', role: 'Call Centre Rep', email: 'leah.nakalema@org.project', facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-075', name: 'Samson Chelangat', department: 'Customer Care & Front Office', role: 'Call Centre Rep', email: 'samson.chelangat@org.project', facility: 'Jinja', isSupervisor: false },
-  { id: 'EMP-076', name: 'Caroline Ahimbisibwe', department: 'Customer Care & Front Office', role: 'Reception Rep', email: 'caroline.ahimbisibwe@org.project', facility: 'Gulu', isSupervisor: false },
-  { id: 'EMP-077', name: 'Doreen Nalweyiso', department: 'Customer Care & Front Office', role: 'Reception Rep', email: 'doreen.nalweyiso@org.project', facility: 'Mbale', isSupervisor: false },
-  { id: 'EMP-078', name: 'Gerald Mukwaya', department: 'Customer Care & Front Office', role: 'Front Desk Officer', email: 'gerald.mukwaya@org.project', facility: 'Arua', isSupervisor: false },
-  { id: 'EMP-079', name: 'Prudence Namwanje', department: 'Customer Care & Front Office', role: 'Client Feedback Officer', email: 'prudence.namwanje@org.project', facility: 'Fort Portal', isSupervisor: false },
-  { id: 'EMP-080', name: 'Cosmas Okumu', department: 'Customer Care & Front Office', role: 'Customer Care Agent', email: 'cosmas.okumu@org.project', facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-081', name: 'Sylvia Nabaggala', department: 'Customer Care & Front Office', role: 'Public Helpdesk Officer', email: 'sylvia.nabaggala@org.project', facility: 'Jinja', isSupervisor: false },
+  // ═══════════════════════════════════════════════════════════════════════
+  // KAMPALA HQ — ENROLMENT (Supervisor: Catherine Komujuni)
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-E01', name: 'Priscilla Atukunda',  department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'priscilla.atukunda@org.project',  facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E02', name: 'Hajara Nalinya',      department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'hajara.nalinya@org.project',      facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E03', name: 'Herbert Serunkuuma',  department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'herbert.serunkuuma@org.project',  facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E04', name: 'Jackie Kabaka',       department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'jackie.kabaka@org.project',       facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E05', name: 'Annabel Kiconco',     department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'annabel.kiconco@org.project',     facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E06', name: 'Annet Baidhi',        department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'annet.baidhi@org.project',        facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E07', name: 'Brian Kafuko',        department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'brian.kafuko@org.project',        facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E08', name: 'Geoffrey Akaija',     department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'geoffrey.akaija@org.project',     facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E09', name: 'Phionah Karungi',     department: 'Operations & Field Services',   role: 'Enrolment Operator / VIP', email: 'phionah.karungi@org.project',     facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E10', name: 'Janet Kabacunguzi',   department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'janet.kabacunguzi@org.project',   facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E11', name: 'Patience Nyakato',    department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'patience.nyakato@org.project',    facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E12', name: 'Donald Taremwa',      department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'donald.taremwa@org.project',      facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E13', name: 'Herbert Rukundo',     department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'herbert.rukundo@org.project',     facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E14', name: 'Susan Namugenyi',     department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'susan.namugenyi@org.project',     facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E15', name: 'Martha Mutunda',      department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'martha.mutunda@org.project',      facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E16', name: 'Salwah Magala',       department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'salwah.magala@org.project',       facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E17', name: 'Sharon Natuha',       department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'sharon.natuha@org.project',       facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E18', name: 'Josephine Nakanwagi', department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'josephine.nakanwagi@org.project', facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E19', name: 'Moses Gumisiriza',    department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'moses.gumisiriza@org.project',    facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E20', name: 'Brenda Nakimbugwe',   department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'brenda.nakimbugwe@org.project',   facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E21', name: 'Carlo Atum Lwanga',   department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'carlo.atumlwanga@org.project',    facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E22', name: 'Dorris Nalumansi',    department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'dorris.nalumansi@org.project',    facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-E23', name: 'Godfrey Tamale',      department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'godfrey.tamale@org.project',      facility: 'Kampala', isSupervisor: false },
 
-  // -------------------------------------------------------------------------
-  // 6. Administration & Stores (14 people)
-  // -------------------------------------------------------------------------
-  { id: 'EMP-082', name: 'Florence Nakiranda', department: 'Administration & Stores', role: 'Project Admin', email: 'florence.nakiranda@org.project', facility: 'Kampala', isSupervisor: true }, // Annex A #10
-  { id: 'EMP-083', name: 'Elijah Waiswa', department: 'Administration & Stores', role: 'Stores Supervisor', email: 'elijah.waiswa@org.project', facility: 'Jinja', isSupervisor: true }, // Annex A #16
-  { id: 'EMP-084', name: 'Godfrey Kiwanuka', department: 'Administration & Stores', role: 'Stock Controller', email: 'godfrey.kiwanuka@org.project', facility: 'Kampala', isSupervisor: true }, // Annex A #15
-  { id: 'EMP-085', name: 'Mary Nakanwagi', department: 'Administration & Stores', role: 'Admin Rep', email: 'mary.nakanwagi@org.project', facility: 'Gulu', isSupervisor: false },
-  { id: 'EMP-086', name: 'Paul Kalanzi', department: 'Administration & Stores', role: 'Admin Rep', email: 'paul.kalanzi@org.project', facility: 'Mbale', isSupervisor: false },
-  { id: 'EMP-087', name: 'Justine Akello', department: 'Administration & Stores', role: 'Assistant Stores Officer', email: 'justine.akello@org.project', facility: 'Arua', isSupervisor: false },
-  { id: 'EMP-088', name: 'Moses Ssenyonga', department: 'Administration & Stores', role: 'Assistant Stock Officer', email: 'moses.ssenyonga@org.project', facility: 'Fort Portal', isSupervisor: false },
-  { id: 'EMP-089', name: 'Rose Nakaye', department: 'Administration & Stores', role: 'Procurement Assistant', email: 'rose.nakaye@org.project', facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-090', name: 'Felix Okello', department: 'Administration & Stores', role: 'Warehouse Inventory Clerk', email: 'felix.okello@org.project', facility: 'Jinja', isSupervisor: false },
-  { id: 'EMP-091', name: 'Lillian Kyomuhangi', department: 'Administration & Stores', role: 'Records Management Officer', email: 'lillian.kyomuhangi@org.project', facility: 'Gulu', isSupervisor: false },
-  { id: 'EMP-092', name: 'Juliet Nankanja', department: 'Administration & Stores', role: 'Administrative Assistant', email: 'juliet.nankanja@org.project', facility: 'Mbale', isSupervisor: false },
-  { id: 'EMP-093', name: 'Daniel Mugabe', department: 'Administration & Stores', role: 'Materials Dispatch Officer', email: 'daniel.mugabe@org.project', facility: 'Arua', isSupervisor: false },
-  { id: 'EMP-094', name: 'Prossy Nabawanuka', department: 'Administration & Stores', role: 'Equipment Registrar', email: 'prossy.nabawanuka@org.project', facility: 'Fort Portal', isSupervisor: false },
-  { id: 'EMP-095', name: 'Oscar Byanyima', department: 'Administration & Stores', role: 'Logistics Liaison Officer', email: 'oscar.byanyima@org.project', facility: 'Mbarara', isSupervisor: false },
+  // ═══════════════════════════════════════════════════════════════════════
+  // KAMPALA HQ — APPROVAL (Supervisor: Catherine Komujuni)
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-A01', name: 'Rachel Mirembe',      department: 'Operations & Field Services',   role: 'Approval Officer',         email: 'rachel.mirembe@org.project',      facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-A02', name: 'Lawrence Okello',     department: 'Operations & Field Services',   role: 'Approval Officer',         email: 'lawrence.okello@org.project',     facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-A03', name: 'Aisha Nanfuka',       department: 'Operations & Field Services',   role: 'Approval Officer',         email: 'aisha.nanfuka@org.project',       facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-A04', name: 'Yuticas Wamaungo',    department: 'Operations & Field Services',   role: 'Approval Officer',         email: 'yuticas.wamaungo@org.project',    facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-A05', name: 'Persis Naigaga',      department: 'Operations & Field Services',   role: 'Approval Officer',         email: 'persis.naigaga@org.project',      facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-A06', name: 'Christine Nambi',     department: 'Operations & Field Services',   role: 'Approval Officer',         email: 'christine.nambi@org.project',     facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-A07', name: 'Caroline Atai',       department: 'Operations & Field Services',   role: 'Approval Officer',         email: 'caroline.atai@org.project',       facility: 'Kampala', isSupervisor: false },
 
-  // -------------------------------------------------------------------------
-  // 7. Finance & Accounts (9 people) - Kampala HQ
-  // -------------------------------------------------------------------------
-  { id: 'EMP-096', name: 'Anthony Musisi', department: 'Finance & Accounts', role: 'Project Accountant', email: 'anthony.musisi@org.project', facility: 'Kampala', isSupervisor: true }, // Annex A #9
-  { id: 'EMP-097', name: 'Constance Nabwire', department: 'Finance & Accounts', role: 'Accounts Rep', email: 'constance.nabwire@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-098', name: 'Herbert Bwire', department: 'Finance & Accounts', role: 'Finance Rep', email: 'herbert.bwire@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-099', name: 'Monica Nalubwama', department: 'Finance & Accounts', role: 'Senior Accounts Officer', email: 'monica.nalubwama@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-100', name: 'Josephine Kyakuwa', department: 'Finance & Accounts', role: 'Payroll Accountant', email: 'josephine.kyakuwa@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-101', name: 'Gideon Atwine', department: 'Finance & Accounts', role: 'Disbursement Officer', email: 'gideon.atwine@org.project', facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-102', name: 'Harriet Namutebi', department: 'Finance & Accounts', role: 'Revenue Verification Analyst', email: 'harriet.namutebi@org.project', facility: 'Jinja', isSupervisor: false },
-  { id: 'EMP-103', name: 'Raymond Sentongo', department: 'Finance & Accounts', role: 'Finance Compliance Analyst', email: 'raymond.sentongo@org.project', facility: 'Gulu', isSupervisor: false },
-  { id: 'EMP-104', name: 'Eunice Namaganda', department: 'Finance & Accounts', role: 'Cash Office Accountant', email: 'eunice.namaganda@org.project', facility: 'Mbale', isSupervisor: false },
+  // ═══════════════════════════════════════════════════════════════════════
+  // KAMPALA HQ — DL RECEIPT & ISSUANCE (Supervisor: Catherine Komujuni)
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-D01', name: 'Frankline Katwesigye',department: 'Operations & Field Services',   role: 'DL Issuance Officer',      email: 'frankline.katwesigye@org.project',facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-D02', name: 'Sophia Navvuga',      department: 'Operations & Field Services',   role: 'DL Issuance Officer',      email: 'sophia.navvuga@org.project',      facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-D03', name: 'Asha Mirembe Ariho',  department: 'Operations & Field Services',   role: 'DL Receipt Officer',       email: 'asha.mirembe@org.project',        facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-D04', name: 'Violet Kataike',      department: 'Operations & Field Services',   role: 'DL Receipt Officer',       email: 'violet.kataike@org.project',      facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-D05', name: 'Penninah Tusuubira',  department: 'Operations & Field Services',   role: 'DL Receipt Officer',       email: 'penninah.tusuubira@org.project',  facility: 'Kampala', isSupervisor: false },
 
-  // -------------------------------------------------------------------------
-  // 8. Quality Assurance (8 people)
-  // -------------------------------------------------------------------------
-  { id: 'EMP-105', name: 'Dr. Stella Nayiga', department: 'Quality Assurance', role: 'Quality Assurance Manager', email: 'stella.nayiga@org.project', facility: 'Kampala', isSupervisor: true }, // Annex A #12
-  { id: 'EMP-106', name: 'Alex Tumwine', department: 'Quality Assurance', role: 'Quality Assurance Rep', email: 'alex.tumwine@org.project', facility: 'Arua', isSupervisor: false },
-  { id: 'EMP-107', name: 'Rachel Nanyonjo', department: 'Quality Assurance', role: 'Quality Assurance Rep', email: 'rachel.nanyonjo@org.project', facility: 'Fort Portal', isSupervisor: false },
-  { id: 'EMP-108', name: 'Mark Mugerwa', department: 'Quality Assurance', role: 'Field QA Inspector', email: 'mark.mugerwa@org.project', facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-109', name: 'Vivian Namatovu', department: 'Quality Assurance', role: 'Field QA Inspector', email: 'vivian.namatovu@org.project', facility: 'Jinja', isSupervisor: false },
-  { id: 'EMP-110', name: 'Henry Luwaga', department: 'Quality Assurance', role: 'Enrolment Data Quality Auditor', email: 'henry.luwaga@org.project', facility: 'Gulu', isSupervisor: false },
-  { id: 'EMP-111', name: 'Juliet Nakato', department: 'Quality Assurance', role: 'Process Standards Officer', email: 'juliet.nakato@org.project', facility: 'Mbale', isSupervisor: false },
-  { id: 'EMP-112', name: 'Timothy Kintu', department: 'Quality Assurance', role: 'QA Verification Specialist', email: 'timothy.kintu@org.project', facility: 'Kampala', isSupervisor: false },
+  // ═══════════════════════════════════════════════════════════════════════
+  // KAMPALA HQ — ORDER BATCHING & PERSONALISATION (Supervisor: Dickson Muhangi)
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-B01', name: 'Ivan Mutebi',         department: 'Technical & IT Support',        role: 'Order Batching Officer',   email: 'ivan.mutebi@org.project',         facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-B02', name: 'Dorothy Ninsiima',    department: 'Technical & IT Support',        role: 'Personalisation Officer',  email: 'dorothy.ninsiima@org.project',    facility: 'Kampala', isSupervisor: false },
 
-  // -------------------------------------------------------------------------
-  // 9. Security & Safety (8 people)
-  // -------------------------------------------------------------------------
-  { id: 'EMP-113', name: 'Major Ronald Mugisha', department: 'Security & Safety', role: 'Security Coordinator', email: 'ronald.mugisha@org.project', facility: 'Kampala', isSupervisor: true }, // Annex A #13
-  { id: 'EMP-114', name: 'Grace Komugisha', department: 'Security & Safety', role: 'Security Rep', email: 'grace.komugisha@org.project', facility: 'Arua', isSupervisor: false },
-  { id: 'EMP-115', name: 'Apollo Ssemwogerere', department: 'Security & Safety', role: 'Security Rep', email: 'apollo.ssemwogerere@org.project', facility: 'Fort Portal', isSupervisor: false },
-  { id: 'EMP-116', name: 'Francis Ochen', department: 'Security & Safety', role: 'Facility Security Supervisor', email: 'francis.ochen@org.project', facility: 'Gulu', isSupervisor: true },
-  { id: 'EMP-117', name: 'Betty Nampeera', department: 'Security & Safety', role: 'Operations Security Escort Lead', email: 'betty.nampeera@org.project', facility: 'Mbale', isSupervisor: false },
-  { id: 'EMP-118', name: 'Charles Aliga', department: 'Security & Safety', role: 'Field Security Inspector', email: 'charles.aliga@org.project', facility: 'Arua', isSupervisor: false },
-  { id: 'EMP-119', name: 'Sarah Nalukenge', department: 'Security & Safety', role: 'Access Control Officer', email: 'sarah.nalukenge@org.project', facility: 'Fort Portal', isSupervisor: false },
-  { id: 'EMP-120', name: 'Victor Ojok', department: 'Security & Safety', role: 'Incident Response Officer', email: 'victor.ojok@org.project', facility: 'Mbarara', isSupervisor: false },
+  // ═══════════════════════════════════════════════════════════════════════
+  // KAMPALA HQ — SHIPMENT (Supervisor: Dickson Muhangi)
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-SH1', name: 'Vanancio Ayebazibwe', department: 'Technical & IT Support',        role: 'Shipment Officer',         email: 'vanancio.ayebazibwe@org.project', facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-SH2', name: 'Shannon Nsinga',      department: 'Technical & IT Support',        role: 'Shipment Officer',         email: 'shannon.nsinga@org.project',      facility: 'Kampala', isSupervisor: false },
 
-  // -------------------------------------------------------------------------
-  // 10. USPC Liaison (6 people) - Kampala HQ
-  // -------------------------------------------------------------------------
-  { id: 'EMP-121', name: 'Nathan Byamukama', department: 'USPC Liaison', role: 'USPC Rep', email: 'nathan.byamukama@org.project', facility: 'Kampala', isSupervisor: true }, // Annex A liaison
-  { id: 'EMP-122', name: 'Christine Nabiryo', department: 'USPC Liaison', role: 'USPC Rep', email: 'christine.nabiryo@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-123', name: 'Dan Sserunjogi', department: 'USPC Liaison', role: 'USPC Technical Liaison', email: 'dan.sserunjogi@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-124', name: 'Ankunda Marion', department: 'USPC Liaison', role: 'USPC Printing & Personalization Rep', email: 'ankunda.marion@org.project', facility: 'Jinja', isSupervisor: false },
-  { id: 'EMP-125', name: 'Moses Kyambadde', department: 'USPC Liaison', role: 'USPC Operations Officer', email: 'moses.kyambadde@org.project', facility: 'Gulu', isSupervisor: false },
-  { id: 'EMP-126', name: 'Hellen Alupo', department: 'USPC Liaison', role: 'USPC Project Quality Representative', email: 'hellen.alupo@org.project', facility: 'Mbale', isSupervisor: false },
+  // ═══════════════════════════════════════════════════════════════════════
+  // KAMPALA HQ — QUALITY ASSURANCE (Supervisor: Basuna Julius)
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-Q01', name: 'Brian Leju',          department: 'Quality Assurance',             role: 'Quality Assurance Rep',    email: 'brian.leju@org.project',          facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-Q02', name: 'Timothy Kirabo Kateete', department: 'Quality Assurance',          role: 'Quality Assurance Rep',    email: 'timothy.kirabo@org.project',      facility: 'Kampala', isSupervisor: false },
 
-  // -------------------------------------------------------------------------
-  // 11. Statistics & Data Management (5 people) - Kampala HQ
-  // -------------------------------------------------------------------------
-  { id: 'EMP-127', name: 'Davis Mpairwe', department: 'Statistics & Data Management', role: 'Statistics Officer', email: 'davis.mpairwe@org.project', facility: 'Kampala', isSupervisor: true }, // Annex A #14
-  { id: 'EMP-128', name: 'Agatha Namagembe', department: 'Statistics & Data Management', role: 'Statistics Department Rep', email: 'agatha.namagembe@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-129', name: 'Joshua Kibirige', department: 'Statistics & Data Management', role: 'Senior Data Analyst', email: 'joshua.kibirige@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-130', name: 'Mercy Kyomugasho', department: 'Statistics & Data Management', role: 'Enrolment Figures Statistician', email: 'mercy.kyomugasho@org.project', facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-131', name: 'Brian Mugalu', department: 'Statistics & Data Management', role: 'Data Integrity Verification Clerk', email: 'brian.mugalu@org.project', facility: 'Jinja', isSupervisor: false },
+  // ═══════════════════════════════════════════════════════════════════════
+  // KAMPALA HQ — CUSTOMER CARE (Supervisor: Nalwanga Doris)
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-C01', name: 'Tracy Atumo',         department: 'Customer Care & Front Office',  role: 'Customer Care Rep',        email: 'tracy.atumo@org.project',         facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-C02', name: 'Dinah Kabanyoro',     department: 'Customer Care & Front Office',  role: 'Customer Care Rep',        email: 'dinah.kabanyoro@org.project',     facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-C03', name: 'Isaac Asiimwe',       department: 'Customer Care & Front Office',  role: 'Customer Care Rep',        email: 'isaac.asiimwe@org.project',       facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-C04', name: 'Sylvia Nabunya',      department: 'Customer Care & Front Office',  role: 'Customer Care Rep',        email: 'sylvia.nabunya@org.project',      facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-C05', name: 'Doreen Akampwera',    department: 'Customer Care & Front Office',  role: 'Customer Care Rep',        email: 'doreen.akampwera@org.project',    facility: 'Kampala', isSupervisor: false },
 
-  // -------------------------------------------------------------------------
-  // 12. Communications & PR (4 people) - Kampala HQ
-  // -------------------------------------------------------------------------
-  { id: 'EMP-132', name: 'Lydia Mbabazi', department: 'Communications & PR', role: 'Communications Manager', email: 'lydia.mbabazi@org.project', facility: 'Kampala', isSupervisor: true }, // Annex A #1
-  { id: 'EMP-133', name: 'Godfrey Alupo', department: 'Communications & PR', role: 'Public Relations Officer', email: 'godfrey.alupo@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-134', name: 'Brenda Nalukwago', department: 'Communications & PR', role: 'Media & Public Affairs Specialist', email: 'brenda.nalukwago@org.project', facility: 'Kampala', isSupervisor: false },
-  { id: 'EMP-135', name: 'Joel Mukasa', department: 'Communications & PR', role: 'Stakeholder Communications Lead', email: 'joel.mukasa@org.project', facility: 'Kampala', isSupervisor: false },
+  // ═══════════════════════════════════════════════════════════════════════
+  // KAMPALA HQ — CALL CENTER (Supervisor: Nalwanga Doris)
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-CC1', name: 'Sherina Umwiza',      department: 'Customer Care & Front Office',  role: 'Call Centre Rep',          email: 'sherina.umwiza@org.project',      facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-CC2', name: 'Richard Abwola',      department: 'Customer Care & Front Office',  role: 'Call Centre Rep',          email: 'richard.abwola@org.project',      facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-CC3', name: 'Grace Ayebale',       department: 'Customer Care & Front Office',  role: 'Call Centre Rep',          email: 'grace.ayebale@org.project',       facility: 'Kampala', isSupervisor: false },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // KAMPALA HQ — TECHNICAL STAFF (Supervisor: Clare Tukahiirwa / PC for Ryan Karl)
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-T01', name: 'Francis Eurien',      department: 'Technical & IT Support',        role: 'Technical Team',           email: 'francis.eurien@org.project',      facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-T02', name: 'Protus Badaza Waiswa',department: 'Technical & IT Support',        role: 'Technical Team',           email: 'protus.badaza@org.project',       facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-T03', name: 'Gilbert Obia',        department: 'Technical & IT Support',        role: 'Technical Team',           email: 'gilbert.obia@org.project',        facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-T04', name: 'Ryan Karl Borinaga',  department: 'Technical & IT Support',        role: 'Technical Team',           email: 'ryan.karl@org.project',           facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-T05', name: 'Allan Agong',         department: 'Technical & IT Support',        role: 'Technical Team',           email: 'allan.agong@org.project',         facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-T06', name: 'Richard Muwanguzi',   department: 'Technical & IT Support',        role: 'Technical Team',           email: 'richard.muwanguzi@org.project',   facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-T07', name: 'Caroline Muhirwe',    department: 'Technical & IT Support',        role: 'Technical Team',           email: 'caroline.muhirwe@org.project',    facility: 'Kampala', isSupervisor: false },
+  { id: 'EMP-T08', name: 'Janan Asingye',       department: 'Technical & IT Support',        role: 'Technical Team',           email: 'janan.asingye@org.project',       facility: 'Kampala', isSupervisor: false },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // JINJA BRANCH
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-J01', name: 'Tumusiime Abraham',   department: 'Facility Supervision',          role: 'Facility Supervisor',      email: 'tumusiime.abraham@org.project',   facility: 'Jinja',   isSupervisor: true  },
+  { id: 'EMP-J02', name: 'Kabahuma Nuuru',      department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'kabahuma.nuuru@org.project',      facility: 'Jinja',   isSupervisor: false },
+  { id: 'EMP-J03', name: 'Mugoowa Nasiifu',     department: 'Customer Care & Front Office',  role: 'Reception / DL Issuance',  email: 'mugoowa.nasiifu@org.project',     facility: 'Jinja',   isSupervisor: false },
+  { id: 'EMP-J04', name: 'Ategeka Caroline',    department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'ategeka.caroline@org.project',    facility: 'Jinja',   isSupervisor: false },
+  { id: 'EMP-J05', name: 'Hildah Nabeta Nabuya',department: 'Administration & Stores',       role: 'Office Assistant',         email: 'hildah.nabeta@org.project',       facility: 'Jinja',   isSupervisor: false },
+  { id: 'EMP-J06', name: 'Manica Kalembe',      department: 'Customer Care & Front Office',  role: 'DL Issuance / Reception',  email: 'manica.kalembe@org.project',      facility: 'Jinja',   isSupervisor: false },
+  { id: 'EMP-J07', name: 'Pauline Nakato',      department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'pauline.nakato@org.project',      facility: 'Jinja',   isSupervisor: false },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // MBALE BRANCH
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-M01', name: 'Alice Nairima',       department: 'Facility Supervision',          role: 'Facility Supervisor',      email: 'alice.nairima@org.project',       facility: 'Mbale',   isSupervisor: true  },
+  { id: 'EMP-M02', name: 'Sharon K. Chemutai',  department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'sharon.chemutai@org.project',     facility: 'Mbale',   isSupervisor: false },
+  { id: 'EMP-M03', name: 'Omongole Harbert',    department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'omongole.harbert@org.project',    facility: 'Mbale',   isSupervisor: false },
+  { id: 'EMP-M04', name: 'Ashraf Kasule',       department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'ashraf.kasule@org.project',       facility: 'Mbale',   isSupervisor: false },
+  { id: 'EMP-M05', name: 'Evelyn L. Kiconco',   department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'evelyn.kiconco@org.project',      facility: 'Mbale',   isSupervisor: false },
+  { id: 'EMP-M06', name: 'Mercy Kirabo',        department: 'Customer Care & Front Office',  role: 'DL Issuance Officer',      email: 'mercy.kirabo@org.project',        facility: 'Mbale',   isSupervisor: false },
+  { id: 'EMP-M07', name: 'Henry O. Ofungi',     department: 'Administration & Stores',       role: 'Office Assistant',         email: 'henry.ofungi@org.project',        facility: 'Mbale',   isSupervisor: false },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // GULU BRANCH
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-G01', name: 'Emmanuel Atine',      department: 'Facility Supervision',          role: 'Facility Supervisor',      email: 'emmanuel.atine@org.project',      facility: 'Gulu',    isSupervisor: true  },
+  { id: 'EMP-G02', name: 'David Otala',         department: 'Operations & Field Services',   role: 'Enrolment / DL Issuance',  email: 'david.otala@org.project',         facility: 'Gulu',    isSupervisor: false },
+  { id: 'EMP-G03', name: 'Everlyn Apiyo Otim',  department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'everlyn.apiyo@org.project',       facility: 'Gulu',    isSupervisor: false },
+  { id: 'EMP-G04', name: 'Aziizi Owoyesigire',  department: 'Customer Care & Front Office',  role: 'Reception / DL Issuance',  email: 'aziizi.owoyesigire@org.project',  facility: 'Gulu',    isSupervisor: false },
+  { id: 'EMP-G05', name: 'Vicky Abur',          department: 'Customer Care & Front Office',  role: 'Reception / DL Issuance',  email: 'vicky.abur@org.project',          facility: 'Gulu',    isSupervisor: false },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // ARUA BRANCH
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-AR1', name: 'Anna Nimaro Laker',   department: 'Facility Supervision',          role: 'Facility Supervisor',      email: 'anna.nimaro@org.project',         facility: 'Arua',    isSupervisor: true  },
+  { id: 'EMP-AR2', name: 'Gilbert Metaloro',    department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'gilbert.metaloro@org.project',    facility: 'Arua',    isSupervisor: false },
+  { id: 'EMP-AR3', name: 'Samuel Oyako',        department: 'Customer Care & Front Office',  role: 'DL Issuance Officer',      email: 'samuel.oyako@org.project',        facility: 'Arua',    isSupervisor: false },
+  { id: 'EMP-AR4', name: 'Brian Charles Mukisa',department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'brian.mukisa@org.project',        facility: 'Arua',    isSupervisor: false },
+  { id: 'EMP-AR5', name: 'Daphine Zalwango',    department: 'Customer Care & Front Office',  role: 'DL Issuance Officer',      email: 'daphine.zalwango@org.project',    facility: 'Arua',    isSupervisor: false },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // FORT PORTAL BRANCH
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-FP1', name: 'Julius Sserunjoji',   department: 'Facility Supervision',          role: 'Facility Supervisor',      email: 'julius.sserunjoji@org.project',   facility: 'Fort Portal', isSupervisor: true  },
+  { id: 'EMP-FP2', name: 'Agatha Komuhendo',    department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'agatha.komuhendo@org.project',    facility: 'Fort Portal', isSupervisor: false },
+  { id: 'EMP-FP3', name: 'Patience Karuhanga',  department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'patience.karuhanga@org.project',  facility: 'Fort Portal', isSupervisor: false },
+  { id: 'EMP-FP4', name: 'Nuslah Kabasinguzi',  department: 'Customer Care & Front Office',  role: 'Reception / DL Issuance',  email: 'nuslah.kabasinguzi@org.project',  facility: 'Fort Portal', isSupervisor: false },
+  { id: 'EMP-FP5', name: 'Deogratious Kisembo', department: 'Customer Care & Front Office',  role: 'Reception / DL Issuance',  email: 'deogratious.kisembo@org.project', facility: 'Fort Portal', isSupervisor: false },
+  { id: 'EMP-FP6', name: 'Kaahwa Atuhurra',     department: 'Administration & Stores',       role: 'Office Assistant',         email: 'kaahwa.atuhurra@org.project',     facility: 'Fort Portal', isSupervisor: false },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // MBARARA BRANCH (inferred from earlier data; no new names in this sheet)
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-MB1', name: 'Marion Birungi',      department: 'Facility Supervision',          role: 'Facility Supervisor',      email: 'marion.birungi@org.project',      facility: 'Mbarara', isSupervisor: true  },
+  { id: 'EMP-MB2', name: 'Richard Tumusiime',   department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'richard.tumusiime@org.project',   facility: 'Mbarara', isSupervisor: false },
+  { id: 'EMP-MB3', name: 'Lydia Kobusinge',     department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'lydia.kobusinge@org.project',     facility: 'Mbarara', isSupervisor: false },
+  { id: 'EMP-MB4', name: 'Geoffrey Lubega',     department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'geoffrey.lubega@org.project',     facility: 'Mbarara', isSupervisor: false },
+  { id: 'EMP-MB5', name: 'Gideon Atwine',       department: 'Finance & Accounts',            role: 'Finance Rep',              email: 'gideon.atwine@org.project',       facility: 'Mbarara', isSupervisor: false },
 ];
 
 /**
@@ -260,16 +264,15 @@ export function generateSyntheticRoster(count: number): Person[] {
   const facilities: FacilityLocation[] = ['Kampala', 'Mbarara', 'Jinja', 'Gulu', 'Mbale', 'Arua', 'Fort Portal'];
 
   while (result.length < count) {
-    const dept = depts[result.length % depts.length];
-    const fac = facilities[result.length % facilities.length];
-    const baseNum = result.length + 1;
+    const dept = depts[idCounter % depts.length];
+    const facility = facilities[idCounter % facilities.length];
     result.push({
-      id: `EMP-${String(idCounter).padStart(3, '0')}`,
-      name: `Colleague ${baseNum}`,
+      id: `EMP-GEN-${String(idCounter).padStart(3, '0')}`,
+      name: `Staff Member ${idCounter}`,
       department: dept,
-      role: 'Operations Specialist',
-      email: `colleague.${baseNum}@org.project`,
-      facility: fac,
+      role: 'Operations Support Officer',
+      email: `staff${idCounter}@org.project`,
+      facility,
       isSupervisor: false,
     });
     idCounter++;

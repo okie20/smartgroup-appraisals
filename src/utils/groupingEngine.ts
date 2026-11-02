@@ -16,6 +16,23 @@ import {
 
 
 /**
+ * People who should ONLY appear on review panels for supervisors/managers —
+ * not on panels for regular front-line staff.
+ * Alex Baguma (Head of Operations) reviews fellow managers and named supervisors
+ * per the document, but should NOT be pulled into panels for receptionists,
+ * enrolment operators, customer care reps, etc.
+ */
+const MANAGEMENT_ONLY_REVIEWERS: string[] = ['baguma'];
+
+/**
+ * Returns true if this reviewer is restricted to management/supervisor panels only.
+ */
+function isManagementOnlyReviewer(reviewer: Person): boolean {
+  const nameLower = reviewer.name.toLowerCase().replace(/[^a-z]/g, '');
+  return MANAGEMENT_ONLY_REVIEWERS.some((fragment) => nameLower.includes(fragment));
+}
+
+/**
  * Regional facility supervisors who are ONLY allowed to evaluate staff
  * from their own branch. They must NOT appear on panels for staff at
  * other facilities, even during workload-balancing passes.
@@ -51,7 +68,10 @@ function getReviewerFacilityRestriction(reviewer: Person): string | null {
 
 /**
  * Hard eligibility check: can `reviewer` sit on the review panel for `reviewee`?
- * Enforces both the non-supervisor same-facility rule AND the regional supervisor restriction.
+ * Enforces three rules:
+ * 1. Non-supervisors only evaluate within their own facility
+ * 2. Regional facility supervisors only evaluate their own branch
+ * 3. Management-only reviewers (e.g. Alex Baguma) only sit on supervisor/manager panels
  */
 function canReviewerEvaluate(reviewer: Person, reviewee: Person): boolean {
   // Rule 1 (existing): non-supervisors only evaluate within their own facility
@@ -61,9 +81,14 @@ function canReviewerEvaluate(reviewer: Person, reviewee: Person): boolean {
     }
   }
 
-  // Rule 2 (new): regional facility supervisors only evaluate their own branch
+  // Rule 2 (existing): regional facility supervisors only evaluate their own branch
   const restriction = getReviewerFacilityRestriction(reviewer);
   if (restriction !== null && restriction !== getPersonFacility(reviewee)) {
+    return false;
+  }
+
+  // Rule 3 (new): management-only reviewers only sit on supervisor/manager panels
+  if (isManagementOnlyReviewer(reviewer) && !isPersonSupervisor(reviewee)) {
     return false;
   }
 
