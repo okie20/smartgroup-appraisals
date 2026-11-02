@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { supabase } from './supabaseClient';
 import { Person, DepartmentCluster, GroupingConfig, AllocatedGroup, AppraisalSubmission, AppMode, UserSession } from './types';
 import { DEFAULT_ROSTER, DEFAULT_CLUSTERS } from './data/defaultRoster';
 import { generateAllocations, GroupAllocationResult } from './utils/groupingEngine';
@@ -252,7 +253,8 @@ export default function App() {
     showNotification('Appraisal draft saved locally');
   }, []);
 
-  const handleSubmitFinal = useCallback((submission: AppraisalSubmission) => {
+  const handleSubmitFinal = useCallback(async (submission: AppraisalSubmission) => {
+    // Save locally first so the UI updates immediately
     setSubmissions((prev) => {
       const updated = {
         ...prev,
@@ -261,7 +263,41 @@ export default function App() {
       saveAppraisalsToStorage(updated);
       return updated;
     });
-    showNotification('Appraisal successfully finalized and submitted to HR records');
+
+    // Push to Supabase using the real AppraisalSubmission fields
+    try {
+      const { error } = await supabase
+        .from('appraisals')
+        .insert([
+          {
+            id: submission.id,
+            reviewer_id: submission.reviewerId,
+            reviewee_id: submission.revieweeId,
+            group_id: submission.groupId,
+            is_self_appraisal: submission.isSelfAppraisal ?? false,
+            ratings: submission.ratings,
+            feedback_strengths: submission.feedback.strengths,
+            feedback_improvements: submission.feedback.improvements,
+            feedback_specific_observation: submission.feedback.specificObservation,
+            status: submission.status,
+            updated_at: submission.updatedAt,
+            submitted_at: submission.submittedAt ?? null,
+            annex_rule_title: submission.annexRuleTitle ?? null,
+            annex_slot_name: submission.annexSlotName ?? null,
+          },
+        ]);
+
+      if (error) {
+        console.error('Supabase save error:', error.message);
+        showNotification('⚠️ Appraisal saved locally but failed to sync to database.');
+        return;
+      }
+
+      showNotification('Appraisal successfully finalized and submitted to HR records');
+    } catch (err) {
+      console.error('Unexpected error saving to Supabase:', err);
+      showNotification('⚠️ Appraisal saved locally but an unexpected error occurred.');
+    }
   }, []);
 
   const handleImportFromExcelOrWord = useCallback(
