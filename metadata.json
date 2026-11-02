@@ -1,0 +1,6 @@
+{
+  "name": "SmartGroup - Department-Aware Random Group Allocation",
+  "description": "Randomly group and sort people from different departments into balanced groups of ~7 with same and close department affinity, full Excel/Word import, and group management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
