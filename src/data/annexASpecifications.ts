@@ -957,16 +957,62 @@ export const ANNEX_A_RULES: AnnexARule[] = [
       },
     ],
   },
+  {
+    id: 'annex-19',
+    orderNumber: 19,
+    functionTitle: 'Production Manager',
+    department: 'Technical & IT Support',
+    originalAppraisersText:
+      'Supervisor; (3) reps from the department; (2) reps from facility supervisors; (1) rep from stock controller',
+    aliases: ['production manager', 'head of production', 'production supervisor'],
+    requirements: [
+      {
+        id: 'r19-1',
+        label: 'Supervisor',
+        targetCount: 1,
+        roleOrDeptDescription: 'System Support Manager or Project Coordinator',
+        matchScore: (rev) =>
+          matchesDept(rev, 'System Support Manager', 'Project Coordinator') ? 10 : 0,
+      },
+      {
+        id: 'r19-2',
+        label: 'Reps from the department (3)',
+        targetCount: 3,
+        roleOrDeptDescription: 'Technical / Production department colleagues',
+        matchScore: (rev) =>
+          matchesDept(rev, 'Technical', 'IT', 'System Support', 'Production') &&
+          !matchesDept(rev, 'Production Manager') ? 8 : 0,
+      },
+      {
+        id: 'r19-3',
+        label: 'Reps from facility supervisors (2)',
+        targetCount: 2,
+        roleOrDeptDescription: 'Facility Supervisor representatives',
+        matchScore: (rev) => matchesDept(rev, 'Facility Supervisor') ? 8 : 0,
+      },
+      {
+        id: 'r19-4',
+        label: 'Rep from stock controller (1)',
+        targetCount: 1,
+        roleOrDeptDescription: 'Stock Controller representative',
+        matchScore: (rev) => matchesDept(rev, 'Stock Controller', 'Stock') ? 8 : 0,
+      },
+    ],
+  },
 ];
 
 /**
  * Match an employee in the roster to one of the 18 Annex A rules
  */
+/**
+ * Match an employee in the roster to one of the 19 Annex A rules.
+ * Covers both named document roles (supervisors) and general staff roles.
+ */
 export function findMatchingAnnexARule(role: string, department: string): AnnexARule | undefined {
   const normRole = (role || '').trim().toLowerCase();
   const normDept = (department || '').trim().toLowerCase();
 
-  // 1. Direct exact or alias match
+  // 1. Direct exact or alias match (covers all 19 rule aliases)
   for (const rule of ANNEX_A_RULES) {
     if (rule.functionTitle.toLowerCase() === normRole) return rule;
     if (rule.aliases.some((alias) => normRole.includes(alias) || alias.includes(normRole))) {
@@ -974,59 +1020,95 @@ export function findMatchingAnnexARule(role: string, department: string): AnnexA
     }
   }
 
-  // 2. Keyword fallback
-  if (normRole.includes('communications') || (normDept.includes('communications') && normRole.includes('manager'))) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-01');
+  // 2. Keyword fallback — order matters: most specific first
+
+  // annex-19: Production Manager
+  if (normRole.includes('production manager') || normRole.includes('head of production')) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-19');
   }
-  if (normRole.includes('customer care') && normRole.includes('supervisor')) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-02');
-  }
-  if (normRole.includes('facility') && (normRole.includes('supervisor') || normDept.includes('facility'))) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-03');
-  }
-  if (normRole.includes('field operations') || (normRole.includes('operations manager') && !normRole.includes('head'))) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-04');
-  }
-  if (normRole.includes('head of operations') || normRole.includes('operations director')) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-05');
-  }
-  if (normRole.includes('it coordinator') || (normRole.includes('it') && normRole.includes('coordinator'))) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-06');
-  }
-  if (normRole.includes('mobile enrolment') || normRole.includes('enrolment officer')) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-07');
-  }
-  if (normRole.includes('pa to pc') || normRole.includes('personal assistant')) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-08');
-  }
-  if (normRole.includes('accountant') || normRole.includes('project accountant')) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-09');
-  }
-  if (normRole.includes('project admin') || (normRole.includes('admin') && normRole.includes('officer'))) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-10');
-  }
-  if (normRole.includes('driver')) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-11');
-  }
-  if (normRole.includes('quality assurance') || normRole.includes('qa manager')) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-12');
-  }
-  if (normRole.includes('security coordinator') || (normRole.includes('security') && normRole.includes('manager'))) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-13');
-  }
-  if (normRole.includes('statistics') || normRole.includes('statistician')) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-14');
-  }
-  if (normRole.includes('stock controller') || normRole.includes('stock control')) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-15');
-  }
-  if (normRole.includes('stores supervisor') || normRole.includes('warehouse supervisor')) {
-    return ANNEX_A_RULES.find((r) => r.id === 'annex-16');
-  }
+  // annex-17: System Support Manager (before generic 'technical' catch)
   if (normRole.includes('system support manager') || normRole.includes('systems manager')) {
     return ANNEX_A_RULES.find((r) => r.id === 'annex-17');
   }
-  if (normRole.includes('technical team') || normRole.includes('technician') || normDept.includes('technical')) {
+  // annex-06: IT Coordinator (before generic 'technical' catch)
+  if (normRole.includes('it coordinator') || (normRole.includes('it') && normRole.includes('coordinator'))) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-06');
+  }
+  // annex-05: Head of Operations (before generic 'operations' catch)
+  if (normRole.includes('head of operations') || normRole.includes('operations director')) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-05');
+  }
+  // annex-04: Field Operations Manager
+  if (normRole.includes('field operations') || (normRole.includes('operations manager') && !normRole.includes('head'))) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-04');
+  }
+  // annex-12: Quality Assurance Manager (before generic 'quality assurance' catch)
+  if (
+    (normRole.includes('quality assurance manager') || normRole.includes('qa manager')) ||
+    (normRole.includes('quality assurance') && normDept.includes('quality'))
+  ) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-12');
+  }
+  // annex-13: Security Coordinator
+  if (normRole.includes('security coordinator') || (normRole.includes('security') && normRole.includes('manager'))) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-13');
+  }
+  // annex-01: Communications Manager
+  if (normRole.includes('communications manager') || normRole.includes('comms manager') ||
+      (normDept.includes('communications') && normRole.includes('manager'))) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-01');
+  }
+  // annex-02: Customer Care Supervisor (before generic 'customer care' catch)
+  if (normRole.includes('customer care supervisor') || normRole.includes('cc supervisor')) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-02');
+  }
+  // annex-03: Facility Supervisor
+  if (
+    (normRole.includes('facility supervisor') && !normRole.includes('assistant')) ||
+    (normDept.includes('facility') && normRole.includes('supervisor') && !normRole.includes('assistant'))
+  ) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-03');
+  }
+  // annex-07: Mobile Enrolment
+  if (normRole.includes('mobile enrolment') || normRole.includes('mobile enrollment') ||
+      normRole.includes('enrolment officer')) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-07');
+  }
+  // annex-08: PA to PC
+  if (normRole.includes('pa to pc') || normRole.includes('personal assistant')) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-08');
+  }
+  // annex-09: Project Accountant
+  if (normRole.includes('project accountant') || normRole.includes('accountant')) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-09');
+  }
+  // annex-10: Project Admin
+  if (normRole.includes('project admin') || normRole.includes('project administrator') ||
+      (normRole.includes('admin') && normRole.includes('officer'))) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-10');
+  }
+  // annex-11: Project Driver / Logistics Driver
+  if (normRole.includes('driver') || normRole.includes('fleet driver')) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-11');
+  }
+  // annex-14: Statistics Officer
+  if (normRole.includes('statistics') || normRole.includes('statistician')) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-14');
+  }
+  // annex-15: Stock Controller
+  if (normRole.includes('stock controller') || normRole.includes('stock control')) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-15');
+  }
+  // annex-16: Stores Supervisor
+  if (normRole.includes('stores supervisor') || normRole.includes('warehouse supervisor')) {
+    return ANNEX_A_RULES.find((r) => r.id === 'annex-16');
+  }
+  // annex-18: Technical Team members (catch-all for technical dept)
+  if (normRole.includes('technical team') || normRole.includes('technician') ||
+      normRole.includes('systems engineer') || normRole.includes('network') ||
+      normRole.includes('database administrator') || normRole.includes('biometric') ||
+      normRole.includes('software application') || normRole.includes('workstation') ||
+      normDept.includes('technical')) {
     return ANNEX_A_RULES.find((r) => r.id === 'annex-18');
   }
 
