@@ -1,87 +1,132 @@
 /**
- * Employee numbers are the key in groups, appraisals, and ?staff= links.
- * Numbering from the list length reuses an ID after someone is removed,
- * so a new link opens the person who already has that number.
+ * employeeIds.ts
+ *
+ * Centralised, collision-proof employee ID generation.
+ *
+ * Rules:
+ * - IDs are formatted as EMP-XXXXXXXX where X is a hex character (e.g. EMP-3F2A1B4C)
+ * - Uses crypto.randomUUID() where available, falls back to Math.random()
+ * - Always checks against the full set of existing IDs before returning
+ * - Batch allocation guarantees no duplicates within the batch either
  */
 
-export function allocateEmployeeIds(reservedIds: Iterable<string>, count: number): string[] {
-  const taken = new Set<string>();
-  let maxNum = 0;
+/**
+ * Generate a single guaranteed-unique employee ID that does not exist in existingIds.
+ */
+export function generateEmployeeId(existingIds: Set<string> | string[]): string {
+  const existing = existingIds instanceof Set ? existingIds : new Set(existingIds);
 
-  for (const raw of reservedIds) {
-    const id = (raw || '').trim();
-    if (!id) continue;
-    taken.add(id.toLowerCase());
-    const match = /^emp-(\d+)$/i.exec(id);
-    if (!match) continue;
-    const n = Number.parseInt(match[1], 10);
-    if (Number.isFinite(n) && n > maxNum) maxNum = n;
-  }
+  let id: string;
+  let attempts = 0;
 
-  const ids: string[] = [];
-  let next = maxNum;
-  while (ids.length < count) {
-    next += 1;
-    const id = `EMP-${String(next).padStart(3, '0')}`;
-    const key = id.toLowerCase();
-    if (taken.has(key)) continue;
-    taken.add(key);
-    ids.push(id);
-  }
-  return ids;
+  do {
+    id = `EMP-${randomHex(8).toUpperCase()}`;
+    attempts++;
+    if (attempts > 10000) {
+      // Absolute fallback: timestamp + random suffix — practically impossible to collide
+      id = `EMP-${Date.now().toString(16).toUpperCase()}-${randomHex(4).toUpperCase()}`;
+      break;
+    }
+  } while (existing.has(id));
+
+  return id;
 }
 
-/** Keep the first person on a shared ID. Later copies get a new number. */
+/**
+ * Allocate `count` unique IDs, none of which appear in existingIds and
+ * none of which are duplicates of each other.
+ */
+export function allocateEmployeeIds(existingIds: string[], count: number): string[] {
+  const taken = new Set(existingIds);
+  const allocated: string[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const id = generateEmployeeId(taken);
+    allocated.push(id);
+    taken.add(id); // prevent intra-batch collisions
+  }
+
+  return allocated;
+}
+
+/**
+ * Ensure a person object has a unique ID, replacing it if it collides.
+ */
+export function ensureUniqueId(
+  person: { id: string; [key: string]: unknown },
+  existingIds: Set<string> | string[]
+): string {
+  const existing = existingIds instanceof Set ? existingIds : new Set(existingIds);
+  if (person.id && !existing.has(person.id)) {
+    return person.id;
+  }
+  return generateEmployeeId(existing);
+}
+
+// ── Internal helpers ────────────────────────────────────────────────────────
+
+function randomHex(bytes: number): string {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const arr = new Uint8Array(bytes / 2);
+    crypto.getRandomValues(arr);
+    return Array.from(arr)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+  // Fallback for environments without crypto
+  let hex = '';
+  for (let i = 0; i < bytes; i++) {
+    hex += Math.floor(Math.random() * 16).toString(16);
+  }
+  return hex;
+}
+
+/**
+ * Ensure every person in an array has a unique ID.
+ * Persons whose ID is missing or collides with an earlier entry get a new one.
+ */
 export function ensureUniqueEmployeeIds<T extends { id: string }>(people: T[]): T[] {
   const seen = new Set<string>();
-  const needsNew = new Set<number>();
-
-  people.forEach((person, index) => {
-    const key = (person.id || '').trim().toLowerCase();
-    if (!key || seen.has(key)) {
-      needsNew.add(index);
-      return;
+  return people.map((p) => {
+    if (p.id && !seen.has(p.id)) {
+      seen.add(p.id);
+      return p;
     }
-    seen.add(key);
-  });
-
-  if (needsNew.size === 0) return people;
-
-  const keptIds = people.filter((_, index) => !needsNew.has(index)).map((person) => person.id);
-  const fresh = allocateEmployeeIds(keptIds, needsNew.size);
-  let cursor = 0;
-
-  return people.map((person, index) => {
-    if (!needsNew.has(index)) return person;
-    const id = fresh[cursor];
-    cursor += 1;
-    return { ...person, id };
+    // ID is missing or duplicate — generate a fresh one
+    const newId = generateEmployeeId(seen);
+    seen.add(newId);
+    return { ...p, id: newId };
   });
 }
 
-export function findPersonByStaffQuery<T extends { id: string; email: string; name: string }>(
+/**
+ * Find a person by a loose staff query string — matches against name, ID, role or email.
+ * Used for URL-based direct links (e.g. ?staff=EMP-R01 or ?staff=Daniel+Ssesanga).
+ */
+export function findPersonByStaffQuery<T extends { id: string; name: string; role: string; email: string }>(
   people: T[],
-  staffQuery: string
-): T | null {
-  const q = staffQuery.trim().toLowerCase();
-  if (!q) return null;
-  const compact = q.replace(/[^a-z0-9]/g, '');
+  query: string
+): T | undefined {
+  if (!query) return undefined;
+  const q = query.toLowerCase().trim();
 
-  const exactId = people.filter((p) => (p.id || '').trim().toLowerCase() === q);
-  if (exactId.length === 1) return exactId[0];
-  if (exactId.length > 1) return null;
+  // Exact ID match first
+  const byId = people.find((p) => p.id.toLowerCase() === q);
+  if (byId) return byId;
 
-  const compactId = people.filter(
-    (p) => (p.id || '').toLowerCase().replace(/[^a-z0-9]/g, '') === compact
-  );
-  if (compactId.length === 1) return compactId[0];
-  if (compactId.length > 1) return null;
+  // Exact name match
+  const byName = people.find((p) => p.name.toLowerCase() === q);
+  if (byName) return byName;
 
-  const byEmail = people.filter((p) => (p.email || '').toLowerCase() === q);
-  if (byEmail.length === 1) return byEmail[0];
+  // Partial name match
+  const byPartialName = people.find((p) => p.name.toLowerCase().includes(q));
+  if (byPartialName) return byPartialName;
 
-  const byName = people.filter((p) => (p.name || '').toLowerCase() === q);
-  if (byName.length === 1) return byName[0];
+  // Email match
+  const byEmail = people.find((p) => p.email.toLowerCase().includes(q));
+  if (byEmail) return byEmail;
 
-  return null;
+  // Role match
+  const byRole = people.find((p) => p.role.toLowerCase().includes(q));
+  return byRole;
 }

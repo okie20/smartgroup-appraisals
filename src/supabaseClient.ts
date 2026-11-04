@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Replace these strings with your actual values from your Supabase Settings -> API tab
-const supabaseUrl = 'https://cmxirvcamhmjagfmxcqu.supabase.co'
-const supabaseAnonKey = 'sb_publishable_39FOCZKvOlPHEIRNApNEdQ_1N8BCcbX'
+// This tells Vite to pull the keys from Netlify's Environment Variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+// Create the connection
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
