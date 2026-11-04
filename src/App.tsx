@@ -24,6 +24,7 @@ import { AnnexASpecificationsModal } from './components/AnnexASpecificationsModa
 import { LoginPage } from './components/LoginPage';
 import { FileSpreadsheet } from 'lucide-react';
 import { USER_TEST_ROSTER } from './data/userUploadedDataset';
+import { ensureUniqueEmployeeIds, findPersonByStaffQuery } from './utils/employeeIds';
 
 export default function App() {
   // Initialize with the user uploaded 2026 Schedule & Facilities dataset (117 staff)
@@ -33,13 +34,17 @@ export default function App() {
       if (saved !== null) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          const unique = ensureUniqueEmployeeIds(parsed);
+          if (unique !== parsed) {
+            localStorage.setItem('smartgroup_custom_roster', JSON.stringify(unique));
+          }
+          return unique;
         }
       }
     } catch (e) {
       console.error('Failed to parse roster from storage:', e);
     }
-    return USER_TEST_ROSTER;
+    return ensureUniqueEmployeeIds(USER_TEST_ROSTER);
   });
   const [clusters, setClusters] = useState<DepartmentCluster[]>(DEFAULT_CLUSTERS);
 
@@ -79,9 +84,10 @@ export default function App() {
   useEffect(() => {
     const isApplied = localStorage.getItem('smartgroup_supervisor_mandate_reset_v7');
     if (!isApplied) {
-      setPeople(USER_TEST_ROSTER);
+      const roster = ensureUniqueEmployeeIds(USER_TEST_ROSTER);
+      setPeople(roster);
       try {
-        localStorage.setItem('smartgroup_custom_roster', JSON.stringify(USER_TEST_ROSTER));
+        localStorage.setItem('smartgroup_custom_roster', JSON.stringify(roster));
         localStorage.setItem('smartgroup_supervisor_mandate_reset_v7', 'true');
       } catch (e) {
         console.error('Failed to write roster storage:', e);
@@ -157,14 +163,7 @@ export default function App() {
       }
 
       if (staffQuery) {
-        const q = staffQuery.trim().toLowerCase();
-        const matched = people.find(
-          (p) =>
-            p.id.toLowerCase() === q ||
-            p.email.toLowerCase() === q ||
-            p.name.toLowerCase() === q ||
-            p.id.toLowerCase().replace(/[^a-z0-9]/g, '') === q.replace(/[^a-z0-9]/g, '')
-        );
+        const matched = findPersonByStaffQuery(people, staffQuery);
 
         if (matched) {
           const empSession: UserSession = { type: 'employee', person: matched };
@@ -302,12 +301,8 @@ export default function App() {
 
   const handleImportFromExcelOrWord = useCallback(
     (importedPeople: Person[], mode: 'replace' | 'append') => {
-      let finalRoster: Person[] = [];
-      if (mode === 'append') {
-        finalRoster = [...people, ...importedPeople];
-      } else {
-        finalRoster = importedPeople;
-      }
+      const combined = mode === 'append' ? [...people, ...importedPeople] : importedPeople;
+      const finalRoster = ensureUniqueEmployeeIds(combined);
 
       // Auto-discover any new departments not currently in clusters, and add them
       const existingDepts = new Set(clusters.flatMap((c) => c.departments));
@@ -603,9 +598,10 @@ export default function App() {
   // Handler: Update Roster
   const handleUpdatePeople = useCallback(
     (newPeople: Person[]) => {
-      setPeople(newPeople);
+      const unique = ensureUniqueEmployeeIds(newPeople);
+      setPeople(unique);
       try {
-        localStorage.setItem('smartgroup_custom_roster', JSON.stringify(newPeople));
+        localStorage.setItem('smartgroup_custom_roster', JSON.stringify(unique));
       } catch (e) {
         console.error('Failed to save custom roster:', e);
       }
@@ -884,6 +880,7 @@ export default function App() {
           onClose={() => setShowExcelWordModal(false)}
           onImport={handleImportFromExcelOrWord}
           existingCount={people.length}
+          existingIds={people.map((p) => p.id)}
           clusters={clusters}
         />
       )}

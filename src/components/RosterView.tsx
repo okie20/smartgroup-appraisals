@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Person, DepartmentCluster, FacilityLocation, ALL_FACILITIES, isPersonSupervisor, getPersonFacility } from '../types';
 import { parseRosterText } from '../utils/exportUtils';
+import { allocateEmployeeIds } from '../utils/employeeIds';
 import { DEFAULT_ROSTER, generateSyntheticRoster } from '../data/defaultRoster';
 import {
   Plus,
@@ -143,7 +144,7 @@ export const RosterView: React.FC<RosterViewProps> = ({
     } else {
       // Add new employee
       const newPerson: Person = {
-        id: `EMP-${String(people.length + 1).padStart(3, '0')}`,
+        id: allocateEmployeeIds(people.map((p) => p.id), 1)[0],
         name: formName.trim(),
         department: targetDept,
         role: formRole.trim() || 'Team Member',

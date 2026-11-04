@@ -1,5 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { Person, DepartmentCluster, FacilityLocation, ALL_FACILITIES } from '../types';
+import { allocateEmployeeIds } from '../utils/employeeIds';
 import {
   parseExcelFile,
   parseWordFile,
@@ -34,6 +35,7 @@ interface ExcelWordImportModalProps {
   onClose: () => void;
   onImport: (newPeople: Person[], mode: 'replace' | 'append') => void;
   existingCount: number;
+  existingIds: string[];
   clusters: DepartmentCluster[];
 }
 
@@ -42,6 +44,7 @@ export const ExcelWordImportModal: React.FC<ExcelWordImportModalProps> = ({
   onClose,
   onImport,
   existingCount,
+  existingIds,
   clusters,
 }) => {
   const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
@@ -207,10 +210,11 @@ export const ExcelWordImportModal: React.FC<ExcelWordImportModalProps> = ({
     if (rowsToImport.length === 0) return;
 
     // Convert ParsedRows to complete Person records preserving facility and supervisor
+    const reserved = importMode === 'append' ? existingIds : [];
+    const ids = allocateEmployeeIds(reserved, rowsToImport.length);
     const newPeople: Person[] = rowsToImport.map((row, idx) => {
-      const id = `EMP-${String(idx + (importMode === 'append' ? existingCount + 1 : 1)).padStart(3, '0')}`;
       return {
-        id,
+        id: ids[idx],
         name: row.name,
         department: row.department === 'General' && defaultDept ? defaultDept : row.department,
         role: row.role || 'Team Member',

@@ -1,4 +1,5 @@
 import { Person, DepartmentCluster, FacilityLocation } from '../types';
+import { allocateEmployeeIds } from '../utils/employeeIds';
 
 export const DEFAULT_CLUSTERS: DepartmentCluster[] = [
   {
@@ -249,8 +250,12 @@ export function generateSyntheticRoster(count: number): Person[] {
     return DEFAULT_ROSTER.slice(0, count);
   }
 
+  const extraCount = count - DEFAULT_ROSTER.length;
+  const extraIds = allocateEmployeeIds(
+    DEFAULT_ROSTER.map((p) => p.id),
+    extraCount
+  );
   const result = [...DEFAULT_ROSTER];
-  let idCounter = DEFAULT_ROSTER.length + 1;
   const depts = [
     'Operations & Field Services',
     'Facility Supervision',
@@ -263,11 +268,12 @@ export function generateSyntheticRoster(count: number): Person[] {
   ];
   const facilities: FacilityLocation[] = ['Kampala', 'Mbarara', 'Jinja', 'Gulu', 'Mbale', 'Arua', 'Fort Portal'];
 
-  while (result.length < count) {
+  extraIds.forEach((id, offset) => {
+    const idCounter = DEFAULT_ROSTER.length + offset + 1;
     const dept = depts[idCounter % depts.length];
     const facility = facilities[idCounter % facilities.length];
     result.push({
-      id: `EMP-GEN-${String(idCounter).padStart(3, '0')}`,
+      id,
       name: `Staff Member ${idCounter}`,
       department: dept,
       role: 'Operations Support Officer',
@@ -275,8 +281,7 @@ export function generateSyntheticRoster(count: number): Person[] {
       facility,
       isSupervisor: false,
     });
-    idCounter++;
-  }
+  });
 
   return result;
 }

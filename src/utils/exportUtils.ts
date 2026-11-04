@@ -1,4 +1,5 @@
 import { Person, AllocatedGroup } from '../types';
+import { allocateEmployeeIds } from './employeeIds';
 import { findMatchingAnnexARule } from '../data/annexASpecifications';
 
 function downloadCsv(filename: string, csvContent: string) {
@@ -156,6 +157,8 @@ export function parseRosterText(rawText: string): Person[] {
   }
 
   const startIndex = hasHeader ? 1 : 0;
+  const pending: { person: Person; needsId: boolean }[] = [];
+  const taken = new Set<string>();
 
   for (let i = startIndex; i < lines.length; i++) {
     const line = lines[i];
@@ -167,16 +170,35 @@ export function parseRosterText(rawText: string): Person[] {
       const dept = parts[1] || 'General';
       const role = parts[2] || 'Team Member';
       const email = parts[3] || `${name.toLowerCase().replace(/\s+/g, '.')}@company.internal`;
-      const id = parts[4] || `EMP-${String(i + 1).padStart(3, '0')}`;
+      const explicit = (parts[4] || '').trim();
+      const key = explicit.toLowerCase();
+      const needsId = !explicit || taken.has(key);
+      if (!needsId) taken.add(key);
 
-      results.push({
-        id,
-        name,
-        department: dept,
-        role,
-        email,
+      pending.push({
+        needsId,
+        person: {
+          id: explicit,
+          name,
+          department: dept,
+          role,
+          email,
+        },
       });
     }
+  }
+
+  const fresh = allocateEmployeeIds(
+    pending.filter((row) => !row.needsId).map((row) => row.person.id),
+    pending.filter((row) => row.needsId).length
+  );
+  let cursor = 0;
+  for (const row of pending) {
+    if (row.needsId) {
+      row.person.id = fresh[cursor];
+      cursor += 1;
+    }
+    results.push(row.person);
   }
 
   return results;
