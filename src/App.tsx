@@ -7,6 +7,8 @@ import {
   loadAppraisalsFromStorage,
   saveAppraisalsToStorage,
   getAppraisalKey,
+  upsertAppraisalToSupabase,
+  syncAppraisalsFromSupabase,
 } from './utils/appraisalStorage';
 import { Navbar } from './components/Navbar';
 import { StatsBar } from './components/StatsBar';
@@ -67,18 +69,17 @@ export default function App() {
   const [appMode, setAppMode] = useState<AppMode>('admin');
   const [activeTab, setActiveTab] = useState<'groups' | 'appraisals' | 'roster'>('groups');
 
-  // Appraisal Submissions state: starts empty
+  // Appraisal Submissions state: seed from localStorage cache first for instant load
   const [submissions, setSubmissions] = useState<Record<string, AppraisalSubmission>>(() => {
-    try {
-      const saved = localStorage.getItem('smartgroup_appraisals');
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      console.error('Failed to load appraisals from storage:', e);
-    }
-    return {};
+    return loadAppraisalsFromStorage();
   });
+
+  // On mount: sync from Supabase and merge with local cache so all devices stay in sync
+  useEffect(() => {
+    syncAppraisalsFromSupabase().then((merged) => {
+      setSubmissions(merged);
+    });
+  }, []);
 
   // Ensure the user uploaded dataset is active for testing with mandated supervisor rules
   useEffect(() => {
@@ -240,7 +241,8 @@ export default function App() {
     saveAppraisalsToStorage(newSubs);
   }, []);
 
-  const handleSaveDraft = useCallback((submission: AppraisalSubmission) => {
+  const handleSaveDraft = useCallback(async (submission: AppraisalSubmission) => {
+    // Save locally immediately so the UI updates without waiting for the network
     setSubmissions((prev) => {
       const updated = {
         ...prev,
@@ -249,7 +251,15 @@ export default function App() {
       saveAppraisalsToStorage(updated);
       return updated;
     });
-    showNotification('Appraisal draft saved locally');
+
+    // Sync draft to Supabase so it's available across devices
+    try {
+      await upsertAppraisalToSupabase(submission);
+    } catch (err) {
+      console.error('Draft sync to Supabase failed (saved locally):', err);
+    }
+
+    showNotification('Appraisal draft saved');
   }, []);
 
   const handleSubmitFinal = useCallback(async (submission: AppraisalSubmission) => {
@@ -263,39 +273,13 @@ export default function App() {
       return updated;
     });
 
-    // Push to Supabase using the real AppraisalSubmission fields
+    // Upsert to Supabase — handles both new submissions and re-submissions
     try {
-      const { error } = await supabase
-        .from('appraisals')
-        .insert([
-          {
-            id: submission.id,
-            reviewer_id: submission.reviewerId,
-            reviewee_id: submission.revieweeId,
-            group_id: submission.groupId,
-            is_self_appraisal: submission.isSelfAppraisal ?? false,
-            ratings: submission.ratings,
-            feedback_strengths: submission.feedback.strengths,
-            feedback_improvements: submission.feedback.improvements,
-            feedback_specific_observation: submission.feedback.specificObservation,
-            status: submission.status,
-            updated_at: submission.updatedAt,
-            submitted_at: submission.submittedAt ?? null,
-            annex_rule_title: submission.annexRuleTitle ?? null,
-            annex_slot_name: submission.annexSlotName ?? null,
-          },
-        ]);
-
-      if (error) {
-        console.error('Supabase save error:', error.message);
-        showNotification('⚠️ Appraisal saved locally but failed to sync to database.');
-        return;
-      }
-
+      await upsertAppraisalToSupabase(submission);
       showNotification('Appraisal successfully finalized and submitted to HR records');
     } catch (err) {
-      console.error('Unexpected error saving to Supabase:', err);
-      showNotification('⚠️ Appraisal saved locally but an unexpected error occurred.');
+      console.error('Supabase submit error:', err);
+      showNotification('⚠️ Appraisal saved locally but failed to sync to database.');
     }
   }, []);
 

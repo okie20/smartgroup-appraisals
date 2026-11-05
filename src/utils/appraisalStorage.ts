@@ -1,7 +1,9 @@
-import { AppraisalSubmission, Person, AllocatedGroup } from '../types';
 import { APPRAISAL_CRITERIA } from '../data/appraisalRubric';
+import { supabase } from '../supabaseClient';
 
 const STORAGE_KEY = 'smartgroup_appraisal_submissions_v1';
+
+// ─── Local Storage (fast cache) ─────────────────────────────────────────────
 
 export function loadAppraisalsFromStorage(): Record<string, AppraisalSubmission> {
   try {
@@ -41,6 +43,100 @@ export function calculateAverageRating(ratings: Record<string, number>): number 
   return Number((sum / values.length).toFixed(1));
 }
 
+// ─── Supabase sync ───────────────────────────────────────────────────────────
+
+/**
+ * Upsert a single submission to Supabase.
+ * Works for both drafts and final submissions — uses upsert so re-saving
+ * a draft doesn't create duplicates.
+ */
+export async function upsertAppraisalToSupabase(submission: AppraisalSubmission): Promise<void> {
+  const { error } = await supabase
+    .from('appraisals')
+    .upsert(
+      [
+        {
+          id: submission.id,
+          reviewer_id: submission.reviewerId,
+          reviewee_id: submission.revieweeId,
+          group_id: submission.groupId,
+          is_self_appraisal: submission.isSelfAppraisal ?? false,
+          ratings: submission.ratings,
+          feedback_strengths: submission.feedback.strengths,
+          feedback_improvements: submission.feedback.improvements,
+          feedback_specific_observation: submission.feedback.specificObservation,
+          status: submission.status,
+          updated_at: submission.updatedAt,
+          submitted_at: submission.submittedAt ?? null,
+          annex_rule_title: submission.annexRuleTitle ?? null,
+          annex_slot_name: submission.annexSlotName ?? null,
+        },
+      ],
+      { onConflict: 'id' }
+    );
+
+  if (error) {
+    console.error('Supabase upsert error:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Load all submissions from Supabase and merge them into local storage.
+ * Called once on app mount so the UI reflects any submissions made on
+ * other devices or sessions.
+ */
+export async function syncAppraisalsFromSupabase(): Promise<Record<string, AppraisalSubmission>> {
+  try {
+    const { data, error } = await supabase
+      .from('appraisals')
+      .select('*')
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase load error:', error.message);
+      return loadAppraisalsFromStorage(); // fall back to local cache
+    }
+
+    if (!data || data.length === 0) return loadAppraisalsFromStorage();
+
+    // Map Supabase rows back to AppraisalSubmission shape
+    const fromCloud: Record<string, AppraisalSubmission> = {};
+    for (const row of data) {
+      const submission: AppraisalSubmission = {
+        id: row.id,
+        reviewerId: row.reviewer_id,
+        revieweeId: row.reviewee_id,
+        groupId: row.group_id,
+        isSelfAppraisal: row.is_self_appraisal ?? false,
+        ratings: row.ratings ?? {},
+        feedback: {
+          strengths: row.feedback_strengths ?? '',
+          improvements: row.feedback_improvements ?? '',
+          specificObservation: row.feedback_specific_observation ?? '',
+        },
+        status: row.status ?? 'draft',
+        updatedAt: row.updated_at ?? new Date().toISOString(),
+        submittedAt: row.submitted_at ?? undefined,
+        annexRuleTitle: row.annex_rule_title ?? undefined,
+        annexSlotName: row.annex_slot_name ?? undefined,
+      };
+      fromCloud[getAppraisalKey(row.reviewer_id, row.reviewee_id)] = submission;
+    }
+
+    // Merge: cloud wins over local cache for the same key
+    const local = loadAppraisalsFromStorage();
+    const merged = { ...local, ...fromCloud };
+    saveAppraisalsToStorage(merged); // update local cache with latest cloud data
+    return merged;
+  } catch (err) {
+    console.error('Unexpected error syncing from Supabase:', err);
+    return loadAppraisalsFromStorage();
+  }
+}
+
+// ─── Mock seed (demo data) ───────────────────────────────────────────────────
+
 /**
  * Seed realistic mock appraisals for demonstration and testing of the HR tracking interface
  */
@@ -77,7 +173,6 @@ export function seedRealisticAppraisals(
   let added = 0;
   const now = new Date();
 
-  // Iterate over groups and their reviewers
   for (const group of groups) {
     if (added >= count) break;
     const reviewee = people.find((p) => p.id === group.revieweeId);
@@ -86,14 +181,13 @@ export function seedRealisticAppraisals(
     for (const reviewerId of group.memberIds) {
       if (added >= count) break;
       const key = getAppraisalKey(reviewerId, group.revieweeId);
-      if (updated[key]) continue; // don't overwrite existing
+      if (updated[key]) continue;
 
-      const isSubmitted = Math.random() > 0.15; // 85% submitted, 15% draft
-      const baseRating = 3 + Math.floor(Math.random() * 3); // 3, 4, or 5
+      const isSubmitted = Math.random() > 0.15;
+      const baseRating = 3 + Math.floor(Math.random() * 3);
 
       const ratings: Record<string, number> = {};
       for (const crit of APPRAISAL_CRITERIA) {
-        // slight jitter
         const jitter = Math.random() > 0.7 ? (Math.random() > 0.5 ? 1 : -1) : 0;
         ratings[crit.id] = Math.max(1, Math.min(5, baseRating + jitter));
       }
