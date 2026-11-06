@@ -1,5 +1,4 @@
 import { Person, DepartmentCluster, FacilityLocation } from '../types';
-import { allocateEmployeeIds } from '../utils/employeeIds';
 
 export const DEFAULT_CLUSTERS: DepartmentCluster[] = [
   {
@@ -45,15 +44,16 @@ export const DEFAULT_CLUSTERS: DepartmentCluster[] = [
 ];
 
 /**
- * Roster sourced directly from the 2026 KAMPALA Rotation schedule and
- * regional branch staff lists provided by management.
+ * Roster sourced directly from the 2026 KAMPALA Rotation schedule (EMPLOYEES.xlsx)
+ * and regional branch staff lists.
  *
- * Kampala HQ covers: Reception, Enrolment, Approval, Order Batching &
- * Personalisation, Quality Assurance, Shipment, DL Receipt & Issuance,
- * Customer Care, Stock Control, VIP, Production, Supervisors, Technical,
- * and Call Center.
+ * Supervisor load-sharing per the Excel "IMMEDIATE SUPERVISOR" column:
+ *   - Reception, Approval, DL Receipt/Issuance, VIP  → Catherine Komujuni
+ *   - Enrolment (largest group, 23 staff)             → Peterson Mandera  (load-balance)
+ *   Both supervisors are co-listed as "Catherine Komujuni & Mandera Peterson" in the sheet.
  *
- * Regional branches: Jinja, Mbale, Gulu, Arua, Fort Portal (Mbarara inferred).
+ * PC (Project Coordinator) is the top boss — supervises Alex Baguma,
+ * System Support Manager, PA to PC, Project Accountant and Ryan Karl directly.
  *
  * Rules:
  * - isSupervisor: true  -> cross-facility management panels; Annex A supervisory reviews
@@ -62,21 +62,24 @@ export const DEFAULT_CLUSTERS: DepartmentCluster[] = [
 export const DEFAULT_ROSTER: Person[] = [
 
   // ═══════════════════════════════════════════════════════════════════════
+  // TOP MANAGEMENT
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 'EMP-PC1', name: 'PC',                  department: 'Project Coordination & Transport', role: 'Project Coordinator',       email: 'pc@org.project',                  facility: 'Kampala', isSupervisor: true },
+
+  // ═══════════════════════════════════════════════════════════════════════
   // KAMPALA HQ — SUPERVISORS & MANAGERS
   // ═══════════════════════════════════════════════════════════════════════
-
-  // Head-office supervisors named in the appraisal document
-  { id: 'EMP-S01', name: 'Alex Baguma',         department: 'Operations & Field Services',  role: 'Head of Operations',        email: 'alex.baguma@org.project',         facility: 'Kampala', isSupervisor: true },
-  { id: 'EMP-S02', name: 'Nantume Catherine',   department: 'Communications & PR',           role: 'Communications Manager',    email: 'nantume.catherine@org.project',   facility: 'Kampala', isSupervisor: true },
-  { id: 'EMP-S03', name: 'Nalwanga Doris',      department: 'Customer Care & Front Office',  role: 'Customer Care Supervisor',  email: 'nalwanga.doris@org.project',      facility: 'Kampala', isSupervisor: true },
-  { id: 'EMP-S04', name: 'Ingabire Pamella',    department: 'Operations & Field Services',   role: 'Field Operations Manager',  email: 'ingabire.pamella@org.project',    facility: 'Kampala', isSupervisor: true },
-  { id: 'EMP-S05', name: 'Catherine Komujuni',  department: 'Operations & Field Services',   role: 'Operations Supervisor',     email: 'catherine.komujuni@org.project',  facility: 'Kampala', isSupervisor: true },
-  { id: 'EMP-S06', name: 'Clare Tukahiirwa',    department: 'Technical & IT Support',        role: 'System Support Manager',    email: 'clare.tukahiirwa@org.project',    facility: 'Kampala', isSupervisor: true },
-  { id: 'EMP-S07', name: 'Dickson Muhangi',     department: 'Technical & IT Support',        role: 'Production Manager',        email: 'dickson.muhangi@org.project',     facility: 'Kampala', isSupervisor: true },
-  { id: 'EMP-S08', name: 'Basuna Julius',       department: 'Quality Assurance',             role: 'Quality Assurance Manager', email: 'basuna.julius@org.project',       facility: 'Kampala', isSupervisor: true },
-  { id: 'EMP-S09', name: 'Peterson Mandera',    department: 'Operations & Field Services',   role: 'Mobile Enrolment',          email: 'peterson.mandera@org.project',    facility: 'Kampala', isSupervisor: true },
-  { id: 'EMP-S10', name: 'Dan Lubega',          department: 'Administration & Stores',       role: 'Stock Controller',          email: 'dan.lubega@org.project',          facility: 'Kampala', isSupervisor: true },
-  { id: 'EMP-S11', name: 'Nalubowa Victoria',   department: 'Project Coordination & Transport', role: 'PA to PC',              email: 'nalubowa.victoria@org.project',   facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S01', name: 'Alex Baguma',         department: 'Operations & Field Services',      role: 'Head of Operations',        email: 'alex.baguma@org.project',         facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S02', name: 'Nantume Catherine',   department: 'Communications & PR',              role: 'Communications Manager',    email: 'nantume.catherine@org.project',   facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S03', name: 'Nalwanga Doris',      department: 'Customer Care & Front Office',     role: 'Customer Care Supervisor',  email: 'nalwanga.doris@org.project',      facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S04', name: 'Ingabire Pamella',    department: 'Operations & Field Services',      role: 'Field Operations Manager',  email: 'ingabire.pamella@org.project',    facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S05', name: 'Catherine Komujuni',  department: 'Operations & Field Services',      role: 'Operations Supervisor',     email: 'catherine.komujuni@org.project',  facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S06', name: 'Clare Tukahiirwa',    department: 'Technical & IT Support',           role: 'System Support Manager',    email: 'clare.tukahiirwa@org.project',    facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S07', name: 'Dickson Muhangi',     department: 'Technical & IT Support',           role: 'Production Manager',        email: 'dickson.muhangi@org.project',     facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S08', name: 'Basuna Julius',       department: 'Quality Assurance',                role: 'Quality Assurance Manager', email: 'basuna.julius@org.project',       facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S09', name: 'Peterson Mandera',    department: 'Operations & Field Services',      role: 'Mobile Enrolment Supervisor', email: 'peterson.mandera@org.project',  facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S10', name: 'Dan Lubega',          department: 'Administration & Stores',          role: 'Stock Controller',          email: 'dan.lubega@org.project',          facility: 'Kampala', isSupervisor: true },
+  { id: 'EMP-S11', name: 'Nalubowa Victoria',   department: 'Project Coordination & Transport', role: 'PA to PC',                  email: 'nalubowa.victoria@org.project',   facility: 'Kampala', isSupervisor: true },
 
   // ═══════════════════════════════════════════════════════════════════════
   // KAMPALA HQ — RECEPTION (Supervisor: Catherine Komujuni)
@@ -90,7 +93,7 @@ export const DEFAULT_ROSTER: Person[] = [
   { id: 'EMP-R07', name: 'Martha Wanyama',      department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'martha.wanyama@org.project',      facility: 'Kampala', isSupervisor: false },
 
   // ═══════════════════════════════════════════════════════════════════════
-  // KAMPALA HQ — ENROLMENT (Supervisor: Catherine Komujuni)
+  // KAMPALA HQ — ENROLMENT (Supervisor: Peterson Mandera — load-share with Catherine)
   // ═══════════════════════════════════════════════════════════════════════
   { id: 'EMP-E01', name: 'Priscilla Atukunda',  department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'priscilla.atukunda@org.project',  facility: 'Kampala', isSupervisor: false },
   { id: 'EMP-E02', name: 'Hajara Nalinya',      department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'hajara.nalinya@org.project',      facility: 'Kampala', isSupervisor: false },
@@ -156,6 +159,7 @@ export const DEFAULT_ROSTER: Person[] = [
 
   // ═══════════════════════════════════════════════════════════════════════
   // KAMPALA HQ — CUSTOMER CARE (Supervisor: Nalwanga Doris)
+  // Close department: Call Center & Reception
   // ═══════════════════════════════════════════════════════════════════════
   { id: 'EMP-C01', name: 'Tracy Atumo',         department: 'Customer Care & Front Office',  role: 'Customer Care Rep',        email: 'tracy.atumo@org.project',         facility: 'Kampala', isSupervisor: false },
   { id: 'EMP-C02', name: 'Dinah Kabanyoro',     department: 'Customer Care & Front Office',  role: 'Customer Care Rep',        email: 'dinah.kabanyoro@org.project',     facility: 'Kampala', isSupervisor: false },
@@ -164,14 +168,15 @@ export const DEFAULT_ROSTER: Person[] = [
   { id: 'EMP-C05', name: 'Doreen Akampwera',    department: 'Customer Care & Front Office',  role: 'Customer Care Rep',        email: 'doreen.akampwera@org.project',    facility: 'Kampala', isSupervisor: false },
 
   // ═══════════════════════════════════════════════════════════════════════
-  // KAMPALA HQ — CALL CENTER (Supervisor: Nalwanga Doris)
+  // KAMPALA HQ — CALL CENTER (Supervisor: Nalwanga Doris; close dept: Reception)
   // ═══════════════════════════════════════════════════════════════════════
   { id: 'EMP-CC1', name: 'Sherina Umwiza',      department: 'Customer Care & Front Office',  role: 'Call Centre Rep',          email: 'sherina.umwiza@org.project',      facility: 'Kampala', isSupervisor: false },
   { id: 'EMP-CC2', name: 'Richard Abwola',      department: 'Customer Care & Front Office',  role: 'Call Centre Rep',          email: 'richard.abwola@org.project',      facility: 'Kampala', isSupervisor: false },
   { id: 'EMP-CC3', name: 'Grace Ayebale',       department: 'Customer Care & Front Office',  role: 'Call Centre Rep',          email: 'grace.ayebale@org.project',       facility: 'Kampala', isSupervisor: false },
 
   // ═══════════════════════════════════════════════════════════════════════
-  // KAMPALA HQ — TECHNICAL STAFF (Supervisor: Clare Tukahiirwa / PC for Ryan Karl)
+  // KAMPALA HQ — TECHNICAL STAFF (Supervisor: Clare Tukahiirwa; Ryan Karl → PC)
+  // Close department: All departments
   // ═══════════════════════════════════════════════════════════════════════
   { id: 'EMP-T01', name: 'Francis Eurien',      department: 'Technical & IT Support',        role: 'Technical Team',           email: 'francis.eurien@org.project',      facility: 'Kampala', isSupervisor: false },
   { id: 'EMP-T02', name: 'Protus Badaza Waiswa',department: 'Technical & IT Support',        role: 'Technical Team',           email: 'protus.badaza@org.project',       facility: 'Kampala', isSupervisor: false },
@@ -233,13 +238,16 @@ export const DEFAULT_ROSTER: Person[] = [
   { id: 'EMP-FP6', name: 'Kaahwa Atuhurra',     department: 'Administration & Stores',       role: 'Office Assistant',         email: 'kaahwa.atuhurra@org.project',     facility: 'Fort Portal', isSupervisor: false },
 
   // ═══════════════════════════════════════════════════════════════════════
-  // MBARARA BRANCH (inferred from earlier data; no new names in this sheet)
+  // MBARARA BRANCH
   // ═══════════════════════════════════════════════════════════════════════
   { id: 'EMP-MB1', name: 'Marion Birungi',      department: 'Facility Supervision',          role: 'Facility Supervisor',      email: 'marion.birungi@org.project',      facility: 'Mbarara', isSupervisor: true  },
-  { id: 'EMP-MB2', name: 'Richard Tumusiime',   department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'richard.tumusiime@org.project',   facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-MB3', name: 'Lydia Kobusinge',     department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'lydia.kobusinge@org.project',     facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-MB4', name: 'Geoffrey Lubega',     department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'geoffrey.lubega@org.project',     facility: 'Mbarara', isSupervisor: false },
-  { id: 'EMP-MB5', name: 'Gideon Atwine',       department: 'Finance & Accounts',            role: 'Finance Rep',              email: 'gideon.atwine@org.project',       facility: 'Mbarara', isSupervisor: false },
+  { id: 'EMP-MB2', name: 'Masereka Morris',     department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'masereka.morris@org.project',     facility: 'Mbarara', isSupervisor: false },
+  { id: 'EMP-MB3', name: 'Kizza Nsamba Andrew', department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'kizza.nsamba@org.project',        facility: 'Mbarara', isSupervisor: false },
+  { id: 'EMP-MB4', name: 'Nangumba Joshua',     department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'nangumba.joshua@org.project',     facility: 'Mbarara', isSupervisor: false },
+  { id: 'EMP-MB5', name: 'Akandwanaho Faith',   department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'akandwanaho.faith@org.project',   facility: 'Mbarara', isSupervisor: false },
+  { id: 'EMP-MB6', name: 'Francis Lukwago',     department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'francis.lukwago@org.project',     facility: 'Mbarara', isSupervisor: false },
+  { id: 'EMP-MB7', name: 'Jollen Nahamya',      department: 'Customer Care & Front Office',  role: 'Reception Rep',            email: 'jollen.nahamya@org.project',      facility: 'Mbarara', isSupervisor: false },
+  { id: 'EMP-MB8', name: 'Alfred Buhungiro',    department: 'Operations & Field Services',   role: 'Enrolment Operator',       email: 'alfred.buhungiro@org.project',    facility: 'Mbarara', isSupervisor: false },
 ];
 
 /**
@@ -250,12 +258,8 @@ export function generateSyntheticRoster(count: number): Person[] {
     return DEFAULT_ROSTER.slice(0, count);
   }
 
-  const extraCount = count - DEFAULT_ROSTER.length;
-  const extraIds = allocateEmployeeIds(
-    DEFAULT_ROSTER.map((p) => p.id),
-    extraCount
-  );
   const result = [...DEFAULT_ROSTER];
+  let idCounter = DEFAULT_ROSTER.length + 1;
   const depts = [
     'Operations & Field Services',
     'Facility Supervision',
@@ -268,12 +272,11 @@ export function generateSyntheticRoster(count: number): Person[] {
   ];
   const facilities: FacilityLocation[] = ['Kampala', 'Mbarara', 'Jinja', 'Gulu', 'Mbale', 'Arua', 'Fort Portal'];
 
-  extraIds.forEach((id, offset) => {
-    const idCounter = DEFAULT_ROSTER.length + offset + 1;
+  while (result.length < count) {
     const dept = depts[idCounter % depts.length];
     const facility = facilities[idCounter % facilities.length];
     result.push({
-      id,
+      id: `EMP-GEN-${String(idCounter).padStart(3, '0')}`,
       name: `Staff Member ${idCounter}`,
       department: dept,
       role: 'Operations Support Officer',
@@ -281,7 +284,8 @@ export function generateSyntheticRoster(count: number): Person[] {
       facility,
       isSupervisor: false,
     });
-  });
+    idCounter++;
+  }
 
   return result;
 }

@@ -279,27 +279,40 @@ export function getDesignatedSupervisorForReviewee(reviewee: Person): Designated
   // ─────────────────────────────────────────────────────────────────────────
 
   if (facility === 'Kampala') {
-    // Enrollment, Reception, Approval, DL Issuance & Receipt, VIP -> Catherine Komujuni
+    // ENROLMENT → Peterson Mandera (load-share: Catherine had too many staff)
+    // Per EMPLOYEES.xlsx: supervisor is "Catherine Komujuni & Mandera Peterson"
+    // Enrolment is the largest group (23 staff) so Peterson takes it to balance load.
+    const isEnrolmentRole =
+      role.includes('enrolment operator') ||
+      role === 'enrolment operator' ||
+      (dept.includes('operations') && role.includes('enrol'));
+
+    if (isEnrolmentRole && !name.includes('mandera')) {
+      return {
+        supervisorName: 'Peterson Mandera',
+        supervisorRole: 'Mobile Enrolment Supervisor (Co-Supervisor for Enrolment)',
+        reason: 'Load-share: Enrolment assigned to Peterson Mandera to balance Catherine Komujuni\'s workload',
+      };
+    }
+
+    // Reception, Approval, DL Issuance & Receipt, VIP → Catherine Komujuni
     const isCatDept =
-      dept.includes('enrol') ||
-      dept.includes('enroll') ||
+      role.includes('reception') ||
+      role.includes('approval') ||
+      role.includes('dl issuance') ||
+      role.includes('dl receipt') ||
+      role.includes('vip') ||
       dept.includes('reception') ||
       dept.includes('approval') ||
       dept.includes('dl receipt') ||
       dept.includes('dl issuance') ||
-      dept.includes('receipt') ||
-      dept.includes('issuance') ||
-      dept === 'vip' ||
-      role.includes('enrol') ||
-      role.includes('reception') ||
-      role.includes('approval') ||
-      role.includes('vip');
+      dept === 'vip';
 
     if (isCatDept && !name.includes('komujuni')) {
       return {
         supervisorName: 'Catherine Komujuni',
-        supervisorRole: 'Line Supervisor (Enrollment, Reception, Approval, DL Issuance & Receipt, VIP)',
-        reason: 'Mandated Frontline Line Supervisor for Enrollment, Reception, Approval, DL Issuance & VIP',
+        supervisorRole: 'Operations Supervisor (Reception, Approval, DL, VIP)',
+        reason: 'Mandated Frontline Line Supervisor for Reception, Approval, DL Issuance & VIP',
       };
     }
 
@@ -311,7 +324,8 @@ export function getDesignatedSupervisorForReviewee(reviewee: Person): Designated
       dept.includes('batching') ||
       dept.includes('shipment') ||
       role.includes('order batching') ||
-      role.includes('shipment');
+      role.includes('shipment') ||
+      role.includes('personalisation');
 
     if (isDicksonDept && !name.includes('muhangi')) {
       return {
@@ -337,12 +351,13 @@ export function getDesignatedSupervisorForReviewee(reviewee: Person): Designated
     // Customer Care / Call Center non-supervisors -> Doris Nalwanga
     const isDorisDept =
       (dept.includes('customer care') || dept.includes('call center') ||
-       role.includes('customer care') || role.includes('call center')) &&
+       role.includes('customer care') || role.includes('call center') ||
+       role.includes('call centre')) &&
       !role.includes('supervisor');
 
     if (isDorisDept && !name.includes('nalwanga')) {
       return {
-        supervisorName: 'Doris Nalwanga',
+        supervisorName: 'Nalwanga Doris',
         supervisorRole: 'Customer Care & Call Center Supervisor',
         reason: 'Mandated Supervisor for Customer Care & Call Center Personnel',
       };
@@ -435,14 +450,21 @@ export function matchSupervisorPerson(
   // ── Named supervisors from the 2026 appraisal document ──────────────────
 
   // PC / Project Coordinator (top-level supervisor)
-  if (targetClean === 'pc' || targetClean.includes('project coordinator')) {
+  if (targetClean === 'pc' || targetClean.includes('projectcoordinator') || targetClean.includes('project coordinator')) {
     return (
       people.find(
         (p) =>
           p.id !== excludeId &&
-          (cleanStr(p.role).includes('projectcoordinator') || cleanStr(p.role) === 'pc')
+          (cleanStr(p.name) === 'pc' ||
+           cleanStr(p.role).includes('projectcoordinator') ||
+           cleanStr(p.name).includes('projectcoordinator'))
       ) || null
     );
+  }
+
+  // Peterson Mandera (Mobile Enrolment Supervisor — co-supervisor for Enrolment)
+  if (targetClean.includes('mandera') || targetClean.includes('peterson')) {
+    return people.find((p) => p.id !== excludeId && cleanStr(p.name).includes('mandera')) || null;
   }
 
   // Alex Baguma (Head of Operations)

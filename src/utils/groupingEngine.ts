@@ -21,6 +21,8 @@ import {
  * Alex Baguma (Head of Operations) reviews fellow managers and named supervisors
  * per the document, but should NOT be pulled into panels for receptionists,
  * enrolment operators, customer care reps, etc.
+ * Peterson Mandera is intentionally excluded from this list — he co-supervises
+ * the Enrolment department alongside Catherine Komujuni.
  */
 const MANAGEMENT_ONLY_REVIEWERS: string[] = ['baguma'];
 
