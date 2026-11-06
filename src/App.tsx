@@ -10,6 +10,12 @@ import {
   upsertAppraisalToSupabase,
   syncAppraisalsFromSupabase,
 } from './utils/appraisalStorage';
+import {
+  loadAllFromCloud,
+  saveRosterToCloud,
+  saveClustersToCloud,
+  saveCustomGroupsToCloud,
+} from './utils/cloudSync';
 import { Navbar } from './components/Navbar';
 import { StatsBar } from './components/StatsBar';
 import { GroupsView } from './components/GroupsView';
@@ -80,6 +86,29 @@ export default function App() {
       setSubmissions(merged);
     });
   }, []);
+
+  // On mount: load roster, clusters and custom groups from Supabase so all devices see the same data
+  useEffect(() => {
+    loadAllFromCloud().then(({ people: cloudPeople, clusters: cloudClusters, customGroups: cloudGroups }) => {
+      if (cloudPeople && cloudPeople.length > 0) {
+        const unique = ensureUniqueEmployeeIds(cloudPeople);
+        setPeople(unique);
+        localStorage.setItem('smartgroup_custom_roster', JSON.stringify(unique));
+      }
+      if (cloudClusters && cloudClusters.length > 0) {
+        setClusters(cloudClusters);
+      }
+      if (cloudGroups && cloudGroups.length > 0) {
+        setCustomGroups(cloudGroups);
+        localStorage.setItem('smartgroup_custom_groups_v2', JSON.stringify(cloudGroups));
+      }
+    });
+  }, []);
+
+  // Sync clusters to Supabase whenever they change
+  useEffect(() => {
+    saveClustersToCloud(clusters);
+  }, [clusters]);
 
   // Ensure the user uploaded dataset is active for testing with mandated supervisor rules
   useEffect(() => {
@@ -319,6 +348,7 @@ export default function App() {
       try {
         localStorage.setItem('smartgroup_custom_roster', JSON.stringify(finalRoster));
         localStorage.setItem('smartgroup_clean_sys_v6', 'true');
+        saveRosterToCloud(finalRoster); // sync to Supabase for cross-device visibility
       } catch (e) {
         console.error('Failed to persist imported roster:', e);
       }
@@ -468,6 +498,7 @@ export default function App() {
       setCustomGroups(updated);
       try {
         localStorage.setItem('smartgroup_custom_groups_v2', JSON.stringify(updated));
+        saveCustomGroupsToCloud(updated);
       } catch (e) {
         console.error(e);
       }
@@ -502,6 +533,7 @@ export default function App() {
       setCustomGroups(updated);
       try {
         localStorage.setItem('smartgroup_custom_groups_v2', JSON.stringify(updated));
+        saveCustomGroupsToCloud(updated);
       } catch (e) {
         console.error(e);
       }
@@ -518,6 +550,7 @@ export default function App() {
         const updated = currentList.map((g) => (g.id === updatedGroup.id ? updatedGroup : g));
         try {
           localStorage.setItem('smartgroup_custom_groups_v2', JSON.stringify(updated));
+          saveCustomGroupsToCloud(updated);
         } catch (e) {
           console.error(e);
         }
@@ -536,6 +569,7 @@ export default function App() {
         const updated = currentList.filter((g) => g.id !== groupId);
         try {
           localStorage.setItem('smartgroup_custom_groups_v2', JSON.stringify(updated));
+          saveCustomGroupsToCloud(updated);
         } catch (e) {
           console.error(e);
         }
@@ -554,6 +588,7 @@ export default function App() {
         const updated = [newGroup, ...currentList];
         try {
           localStorage.setItem('smartgroup_custom_groups_v2', JSON.stringify(updated));
+          saveCustomGroupsToCloud(updated);
         } catch (e) {
           console.error(e);
         }
@@ -586,6 +621,7 @@ export default function App() {
       setPeople(unique);
       try {
         localStorage.setItem('smartgroup_custom_roster', JSON.stringify(unique));
+        saveRosterToCloud(unique); // sync to Supabase so other devices see the change
       } catch (e) {
         console.error('Failed to save custom roster:', e);
       }
