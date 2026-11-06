@@ -111,14 +111,20 @@ export default function App() {
   }, [clusters]);
 
   // Ensure the user uploaded dataset is active for testing with mandated supervisor rules
+  // v8: force reload with updated DEFAULT_ROSTER (PC added, Mbarara staff, Peterson load-share)
   useEffect(() => {
-    const isApplied = localStorage.getItem('smartgroup_supervisor_mandate_reset_v7');
+    const isApplied = localStorage.getItem('smartgroup_roster_reset_v8');
     if (!isApplied) {
-      const roster = ensureUniqueEmployeeIds(USER_TEST_ROSTER);
+      const roster = ensureUniqueEmployeeIds(DEFAULT_ROSTER);
       setPeople(roster);
+      // Clear old cloud roster so Supabase also gets the fresh data
+      saveRosterToCloud(roster);
       try {
         localStorage.setItem('smartgroup_custom_roster', JSON.stringify(roster));
-        localStorage.setItem('smartgroup_supervisor_mandate_reset_v7', 'true');
+        localStorage.setItem('smartgroup_roster_reset_v8', 'true');
+        // Clear stale custom groups so panels regenerate with new rules
+        localStorage.removeItem('smartgroup_custom_groups_v2');
+        setCustomGroups(null);
       } catch (e) {
         console.error('Failed to write roster storage:', e);
       }
