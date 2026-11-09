@@ -124,19 +124,37 @@ export default function App() {
   }, []);
 
   // On mount: load roster, clusters and custom groups from Supabase so all devices see the same data
+  // If Supabase has data → use it (preserves any edits made on the live site)
+  // If Supabase is empty → seed DEFAULT_ROSTER once and push it up
   useEffect(() => {
     loadAllFromCloud().then(({ people: cloudPeople, clusters: cloudClusters, customGroups: cloudGroups }) => {
+
       if (cloudPeople && cloudPeople.length > 0) {
+        // Cloud has data — always use it, never overwrite with defaults
         const unique = ensureUniqueEmployeeIds(cloudPeople);
         setPeople(unique);
         localStorage.setItem('smartgroup_custom_roster', JSON.stringify(unique));
+        localStorage.setItem('smartgroup_roster_reset_v8', 'true'); // mark as done
+      } else {
+        // Cloud is empty — seed with DEFAULT_ROSTER and push up
+        const roster = ensureUniqueEmployeeIds(DEFAULT_ROSTER);
+        setPeople(roster);
+        saveRosterToCloud(roster);
+        localStorage.setItem('smartgroup_custom_roster', JSON.stringify(roster));
+        localStorage.setItem('smartgroup_roster_reset_v8', 'true');
       }
+
       if (cloudClusters && cloudClusters.length > 0) {
         setClusters(cloudClusters);
       }
+
       if (cloudGroups && cloudGroups.length > 0) {
         setCustomGroups(cloudGroups);
         localStorage.setItem('smartgroup_custom_groups_v2', JSON.stringify(cloudGroups));
+      } else {
+        // Clear stale local groups so panels regenerate cleanly
+        localStorage.removeItem('smartgroup_custom_groups_v2');
+        setCustomGroups(null);
       }
     });
   }, []);
@@ -147,26 +165,6 @@ export default function App() {
   }, [clusters]);
 
   // Ensure the user uploaded dataset is active for testing with mandated supervisor rules
-  // v8: force reload with updated DEFAULT_ROSTER (PC added, Mbarara staff, Peterson load-share)
-  useEffect(() => {
-    const isApplied = localStorage.getItem('smartgroup_roster_reset_v8');
-    if (!isApplied) {
-      const roster = ensureUniqueEmployeeIds(DEFAULT_ROSTER);
-      setPeople(roster);
-      // Clear old cloud roster so Supabase also gets the fresh data
-      saveRosterToCloud(roster);
-      try {
-        localStorage.setItem('smartgroup_custom_roster', JSON.stringify(roster));
-        localStorage.setItem('smartgroup_roster_reset_v8', 'true');
-        // Clear stale custom groups so panels regenerate with new rules
-        localStorage.removeItem('smartgroup_custom_groups_v2');
-        setCustomGroups(null);
-      } catch (e) {
-        console.error('Failed to write roster storage:', e);
-      }
-    }
-  }, []);
-
   // Current logged in user in the Employee Portal
   const [currentPortalUserId, setCurrentPortalUserId] = useState<string | null>(() => {
     try {
