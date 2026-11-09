@@ -56,29 +56,65 @@ export default function App() {
   });
   const [clusters, setClusters] = useState<DepartmentCluster[]>(DEFAULT_CLUSTERS);
 
-  // Default to Admin session so user can immediately input their new data
+  // Session starts null (show login screen) unless a valid saved session exists
   const [userSession, setUserSession] = useState<UserSession | null>(() => {
     try {
       const saved = localStorage.getItem('smartgroup_auth_session');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.type === 'admin') {
-          return { type: 'admin', username: parsed.username || 'Admin' };
+        // Restore admin session from storage
+        if (parsed.type === 'admin' && parsed.username) {
+          return { type: 'admin', username: parsed.username };
         }
+        // Employee sessions are restored separately via currentPortalUserId
+        // Don't restore them here — they go through the portal path below
       }
     } catch (e) {
       console.error('Failed to parse auth session:', e);
     }
-    return { type: 'admin', username: 'Admin' };
+    // No saved session — show login screen
+    return null;
   });
 
-  const [appMode, setAppMode] = useState<AppMode>('admin');
+  const [appMode, setAppMode] = useState<AppMode>(() => {
+    // Start in portal mode — HR console only accessible after proper admin login
+    try {
+      const saved = localStorage.getItem('smartgroup_auth_session');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.type === 'admin') return 'admin';
+      }
+    } catch { /* ignore */ }
+    return 'portal';
+  });
   const [activeTab, setActiveTab] = useState<'groups' | 'appraisals' | 'roster'>('groups');
 
   // Appraisal Submissions state: seed from localStorage cache first for instant load
   const [submissions, setSubmissions] = useState<Record<string, AppraisalSubmission>>(() => {
     return loadAppraisalsFromStorage();
   });
+
+  // On mount: restore employee session if one was saved
+  useEffect(() => {
+    if (userSession) return; // already restored (e.g. admin)
+    try {
+      const saved = localStorage.getItem('smartgroup_auth_session');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.type === 'employee' && parsed.personId) {
+          const person = people.find((p) => p.id === parsed.personId);
+          if (person) {
+            setUserSession({ type: 'employee', person });
+            setCurrentPortalUserId(person.id);
+            setAppMode('portal');
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to restore employee session:', e);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [people]);
 
   // On mount: sync from Supabase and merge with local cache so all devices stay in sync
   useEffect(() => {
@@ -191,10 +227,9 @@ export default function App() {
       const modeQuery = params.get('mode');
 
       if (modeQuery === 'admin' || params.get('admin') === 'true') {
-        const adminSession: UserSession = { type: 'admin', username: 'Admin' };
-        setUserSession(adminSession);
-        setAppMode('admin');
-        localStorage.setItem('smartgroup_auth_session', JSON.stringify({ type: 'admin', username: 'Admin' }));
+        // URL admin bypass is blocked — must go through proper login
+        // Silently redirect to login instead of granting admin access
+        window.history.replaceState({}, document.title, window.location.pathname);
         return;
       }
 
@@ -263,9 +298,14 @@ export default function App() {
   }, [people, handleLogout]);
 
   const handleSetAppMode = useCallback((mode: AppMode) => {
+    // Employees are NEVER allowed to access the HR admin console
+    if (mode === 'admin' && userSession?.type !== 'admin') {
+      showNotification('⛔ Access denied — HR Console is restricted to authorised administrators only.');
+      return;
+    }
     setAppMode(mode);
     localStorage.setItem('smartgroup_last_mode', mode);
-  }, []);
+  }, [userSession, showNotification]);
 
 
 

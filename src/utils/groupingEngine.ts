@@ -98,6 +98,60 @@ function canReviewerEvaluate(reviewer: Person, reviewee: Person): boolean {
 }
 
 /**
+ * Close department mapping from the EMPLOYEES.xlsx "CLOSE DEPARTMENT" column.
+ * When scoring candidates for a reviewee, peers from these close departments
+ * get a priority boost so panels are built from the most relevant colleagues first.
+ */
+const CLOSE_DEPARTMENT_MAP: Record<string, string[]> = {
+  'Reception':                   ['Customer Care & Front Office', 'Call Centre'],
+  'Enrolment':                   ['Operations & Field Services'],
+  'Approval':                    ['Operations & Field Services'],
+  'Call Centre':                 ['Customer Care & Front Office'],
+  'Customer Care':               ['Customer Care & Front Office'],
+  'Quality Assurance':           ['Technical & IT Support'],  // QA ↔ Order Batching
+  'Shipment':                    ['Quality Assurance', 'Technical & IT Support'],
+  'DL Receipt & Issuance':       ['Technical & IT Support'],  // DL ↔ Shipment
+  'Order Batching':              ['Quality Assurance'],
+  'Technical & IT Support':      ['Operations & Field Services', 'Customer Care & Front Office', 'Administration & Stores', 'Quality Assurance'],
+  'Operations & Field Services': ['Customer Care & Front Office', 'Technical & IT Support'],
+};
+
+/**
+ * Returns a close-department bonus score for a candidate reviewing a given reviewee.
+ * Higher means more closely related per the Excel.
+ */
+function getCloseDeptBonus(candidate: Person, reviewee: Person): number {
+  const revDept = reviewee.department;
+  const candDept = candidate.department;
+  if (revDept === candDept) return 0; // same dept is handled by affinity score, not here
+
+  const closeList = CLOSE_DEPARTMENT_MAP[revDept] || [];
+  if (closeList.some((d) => candDept.includes(d) || d.includes(candDept))) return 18;
+
+  // Also check by reviewee role keywords
+  const revRole = reviewee.role.toLowerCase();
+  if (revRole.includes('reception') && (candDept.includes('Customer Care') || candidate.role.toLowerCase().includes('call'))) return 18;
+  if (revRole.includes('enrolment') && candDept.includes('Operations')) return 18;
+  if (revRole.includes('approval') && candDept.includes('Operations')) return 18;
+  if (revRole.includes('technical') && (candDept.includes('Operations') || candDept.includes('Administration'))) return 15;
+  if (revRole.includes('shipment') && candDept.includes('Quality')) return 15;
+
+  return 0;
+}
+
+/**
+ * Returns true if a person should be excluded from being a reviewee.
+ * PC (Project Coordinator / top boss) is not appraised by the system.
+ */
+function isExcludedFromBeingReviewed(person: Person): boolean {
+  const nameLower = person.name.toLowerCase().trim();
+  const roleLower = person.role.toLowerCase().trim();
+  // PC is the top boss — not appraised
+  if (nameLower === 'pc' || roleLower === 'project coordinator') return true;
+  return false;
+}
+
+/**
  * Seeded pseudo-random number generator (Mulberry32)
  */
 function createRng(seed: number) {
@@ -217,7 +271,8 @@ export function generateAllocations(
   const groupMembersMap: Record<string, string[]> = {};
 
   // Randomize iteration order of reviewees so assignment order does not bias
-  const shuffledReviewees = shuffle([...people], rng);
+  // PC (top boss) is excluded from being reviewed
+  const shuffledReviewees = shuffle(people.filter((p) => !isExcludedFromBeingReviewed(p)), rng);
 
   // Map tracking mandatory designated supervisors for each reviewee
   const mandatorySupervisorMap: Record<
@@ -346,6 +401,9 @@ export function generateAllocations(
             affinityScore = 25;
           }
 
+          // Close department bonus from EMPLOYEES.xlsx "CLOSE DEPARTMENT" column
+          const closeDeptBonus = getCloseDeptBonus(candidate, reviewee);
+
           // Heavy facility alignment for non-supervisors
           const isSameFacility = getPersonFacility(candidate) === revieweeFacility;
           const facilityWeight = !isRevieweeSupervisor ? (isSameFacility ? 60 : -500) : (isSameFacility ? 10 : 0);
@@ -354,7 +412,7 @@ export function generateAllocations(
           const loadPenalty = currentLoad * 7.0;
           const jitter = rng() * 5;
 
-          const finalScore = affinityScore + facilityWeight - loadPenalty + jitter;
+          const finalScore = affinityScore + closeDeptBonus + facilityWeight - loadPenalty + jitter;
           return { candidate, score: finalScore };
         });
 

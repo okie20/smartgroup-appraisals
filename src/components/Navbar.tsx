@@ -183,12 +183,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               </>
             ) : (
-              <button
-                onClick={() => setAppMode('admin')}
-                className="px-3 py-1.5 text-xs font-semibold text-slate-200 hover:text-white bg-[#0E223D] hover:bg-[#132E52] border border-[#132E52] rounded-lg transition-colors cursor-pointer"
-              >
-                Go to HR Console
-              </button>
+              // Only show "Go to HR Console" if the logged-in session is an admin
+              // Employees must not see or access this button
+              session?.type === 'admin' ? (
+                <button
+                  onClick={() => setAppMode('admin')}
+                  className="px-3 py-1.5 text-xs font-semibold text-slate-200 hover:text-white bg-[#0E223D] hover:bg-[#132E52] border border-[#132E52] rounded-lg transition-colors cursor-pointer"
+                >
+                  Go to HR Console
+                </button>
+              ) : null
             )}
 
             {/* User Session Info */}
