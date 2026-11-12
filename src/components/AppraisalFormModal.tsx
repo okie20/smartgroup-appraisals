@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle2, Save, Send, AlertTriangle, ShieldCheck, Lock, Star, Sparkles } from 'lucide-react';
 import { Person, AppraisalSubmission } from '../types';
-import { APPRAISAL_CRITERIA } from '../data/appraisalRubric';
+import { loadCriteria } from '../data/appraisalRubric';
 import { calculateAverageRating } from '../utils/appraisalStorage';
 
 interface AppraisalFormModalProps {
@@ -38,9 +38,13 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
+  // Load live criteria each time the modal opens (picks up any edits from the rubric editor)
+  const [criteria, setCriteria] = useState(() => loadCriteria());
+
   // Initialize or reset form when modal opens
   useEffect(() => {
     if (isOpen) {
+      setCriteria(loadCriteria()); // refresh in case rubric was edited
       if (initialSubmission) {
         setRatings(initialSubmission.ratings || {});
         setStrengths(initialSubmission.feedback?.strengths || '');
@@ -62,7 +66,7 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
   const isSubmitted = initialSubmission?.status === 'submitted';
   const averageScore = calculateAverageRating(ratings);
 
-  const allCriteriaAnswered = APPRAISAL_CRITERIA.every(
+  const allCriteriaAnswered = criteria.every(
     (c) => typeof ratings[c.id] === 'number' && ratings[c.id] >= 1
   );
 
@@ -244,7 +248,7 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
                 Criteria completed:{' '}
                 <strong className="text-slate-800">
                   {Object.values(ratings).filter((v) => v > 0).length} of{' '}
-                  {APPRAISAL_CRITERIA.length}
+                  {criteria.length}
                 </strong>
               </div>
               <div className="text-[11px] text-slate-400 mt-0.5">
@@ -263,7 +267,7 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
             </div>
 
             <div className="space-y-4">
-              {APPRAISAL_CRITERIA.map((criterion, idx) => {
+              {criteria.map((criterion, idx) => {
                 const currentVal = ratings[criterion.id] || 0;
                 return (
                   <div

@@ -19,9 +19,11 @@ import {
   Copy,
   Check,
   Share2,
+  ClipboardList,
 } from 'lucide-react';
-import { Person, AllocatedGroup, AppraisalSubmission, DepartmentCluster } from '../types';
-import { APPRAISAL_CRITERIA } from '../data/appraisalRubric';
+import { Person, AllocatedGroup, AppraisalSubmission, DepartmentCluster, AppraisalCriterion } from '../types';
+import { APPRAISAL_CRITERIA, loadCriteria } from '../data/appraisalRubric';
+import { RubricEditorModal } from './RubricEditorModal';
 import { ANNEX_A_RULES } from '../data/annexASpecifications';
 import {
   calculateAverageRating,
@@ -58,6 +60,8 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
   const [expandedPersonId, setExpandedPersonId] = useState<string | null>(null);
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showRubricEditor, setShowRubricEditor] = useState(false);
+  const [liveCriteria, setLiveCriteria] = useState<AppraisalCriterion[]>(() => loadCriteria());
 
   const getDirectLinkForPerson = (personId: string) => {
     if (typeof window === 'undefined') return `?staff=${personId}`;
@@ -434,6 +438,15 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Reset</span>
+            </button>
+
+            <button
+              onClick={() => setShowRubricEditor(true)}
+              title="Edit appraisal questions / criteria"
+              className="px-3.5 py-2 text-xs font-semibold text-indigo-200 hover:text-white bg-indigo-900/40 hover:bg-indigo-800/60 border border-indigo-700/60 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <ClipboardList className="w-3.5 h-3.5" />
+              <span>Edit Questions</span>
             </button>
           </div>
         </div>
@@ -974,6 +987,12 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
           setShowResetConfirm(false);
         }}
         onCancel={() => setShowResetConfirm(false)}
+      />
+
+      <RubricEditorModal
+        isOpen={showRubricEditor}
+        onClose={() => setShowRubricEditor(false)}
+        onCriteriaSaved={(updated) => setLiveCriteria(updated)}
       />
     </div>
   );

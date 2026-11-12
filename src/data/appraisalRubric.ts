@@ -1,6 +1,8 @@
 import { AppraisalCriterion } from '../types';
 
-export const APPRAISAL_CRITERIA: AppraisalCriterion[] = [
+const RUBRIC_STORAGE_KEY = 'appraisal_rubric_criteria';
+
+export const DEFAULT_APPRAISAL_CRITERIA: AppraisalCriterion[] = [
   {
     id: 'crit-exec',
     category: 'Core Execution',
@@ -72,3 +74,29 @@ export const APPRAISAL_CRITERIA: AppraisalCriterion[] = [
     },
   },
 ];
+
+// --- Persistent rubric helpers ---
+
+export function loadCriteria(): AppraisalCriterion[] {
+  try {
+    const raw = localStorage.getItem(RUBRIC_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as AppraisalCriterion[];
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return DEFAULT_APPRAISAL_CRITERIA;
+}
+
+export function saveCriteria(criteria: AppraisalCriterion[]): void {
+  localStorage.setItem(RUBRIC_STORAGE_KEY, JSON.stringify(criteria));
+}
+
+export function resetCriteriaToDefaults(): void {
+  localStorage.removeItem(RUBRIC_STORAGE_KEY);
+}
+
+// Backwards-compatible export — reads from localStorage so runtime changes are reflected
+export const APPRAISAL_CRITERIA: AppraisalCriterion[] = loadCriteria();
