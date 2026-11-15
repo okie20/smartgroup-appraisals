@@ -851,6 +851,7 @@ export const AppraisalPortalView: React.FC<AppraisalPortalViewProps> = ({
           onClose={handleCloseModal}
           reviewer={currentUser}
           reviewee={activeReviewee}
+          allPeople={people}
           groupId={activeGroupId}
           isSelfAppraisal={isSelfReviewModal}
           annexRuleTitle={activeAnnexRuleTitle}

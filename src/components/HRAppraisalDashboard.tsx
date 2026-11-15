@@ -21,7 +21,7 @@ import {
   Share2,
   ClipboardList,
 } from 'lucide-react';
-import { Person, AllocatedGroup, AppraisalSubmission, DepartmentCluster, AppraisalCriterion } from '../types';
+import { Person, AllocatedGroup, AppraisalSubmission, DepartmentCluster } from '../types';
 import { APPRAISAL_CRITERIA, loadCriteria } from '../data/appraisalRubric';
 import { RubricEditorModal } from './RubricEditorModal';
 import { ANNEX_A_RULES } from '../data/annexASpecifications';
@@ -61,7 +61,6 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showRubricEditor, setShowRubricEditor] = useState(false);
-  const [liveCriteria, setLiveCriteria] = useState<AppraisalCriterion[]>(() => loadCriteria());
 
   const getDirectLinkForPerson = (personId: string) => {
     if (typeof window === 'undefined') return `?staff=${personId}`;
@@ -992,7 +991,7 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
       <RubricEditorModal
         isOpen={showRubricEditor}
         onClose={() => setShowRubricEditor(false)}
-        onCriteriaSaved={(updated) => setLiveCriteria(updated)}
+        onSaved={() => setLiveCriteria([])}
       />
     </div>
   );

@@ -1,4 +1,5 @@
-import { APPRAISAL_CRITERIA } from '../data/appraisalRubric';
+import { AppraisalSubmission, Person, AllocatedGroup } from '../types';
+import { loadPerformanceRatings } from '../data/performanceRatings';
 import { supabase } from '../supabaseClient';
 
 const STORAGE_KEY = 'smartgroup_appraisal_submissions_v1';
@@ -45,11 +46,6 @@ export function calculateAverageRating(ratings: Record<string, number>): number 
 
 // ─── Supabase sync ───────────────────────────────────────────────────────────
 
-/**
- * Upsert a single submission to Supabase.
- * Works for both drafts and final submissions — uses upsert so re-saving
- * a draft doesn't create duplicates.
- */
 export async function upsertAppraisalToSupabase(submission: AppraisalSubmission): Promise<void> {
   const { error } = await supabase
     .from('appraisals')
@@ -61,10 +57,14 @@ export async function upsertAppraisalToSupabase(submission: AppraisalSubmission)
           reviewee_id: submission.revieweeId,
           group_id: submission.groupId,
           is_self_appraisal: submission.isSelfAppraisal ?? false,
+          relationship: submission.relationship ?? null,
           ratings: submission.ratings,
-          feedback_strengths: submission.feedback.strengths,
-          feedback_improvements: submission.feedback.improvements,
-          feedback_specific_observation: submission.feedback.specificObservation,
+          rating_comments: submission.ratingComments ?? {},
+          key_achievements: submission.keyAchievements ?? '',
+          final_comment: submission.finalComment ?? '',
+          feedback_strengths: submission.feedback?.strengths ?? '',
+          feedback_improvements: submission.feedback?.improvements ?? '',
+          feedback_specific_observation: submission.feedback?.specificObservation ?? '',
           status: submission.status,
           updated_at: submission.updatedAt,
           submitted_at: submission.submittedAt ?? null,
@@ -81,11 +81,6 @@ export async function upsertAppraisalToSupabase(submission: AppraisalSubmission)
   }
 }
 
-/**
- * Load all submissions from Supabase and merge them into local storage.
- * Called once on app mount so the UI reflects any submissions made on
- * other devices or sessions.
- */
 export async function syncAppraisalsFromSupabase(): Promise<Record<string, AppraisalSubmission>> {
   try {
     const { data, error } = await supabase
@@ -95,12 +90,11 @@ export async function syncAppraisalsFromSupabase(): Promise<Record<string, Appra
 
     if (error) {
       console.error('Supabase load error:', error.message);
-      return loadAppraisalsFromStorage(); // fall back to local cache
+      return loadAppraisalsFromStorage();
     }
 
     if (!data || data.length === 0) return loadAppraisalsFromStorage();
 
-    // Map Supabase rows back to AppraisalSubmission shape
     const fromCloud: Record<string, AppraisalSubmission> = {};
     for (const row of data) {
       const submission: AppraisalSubmission = {
@@ -109,7 +103,11 @@ export async function syncAppraisalsFromSupabase(): Promise<Record<string, Appra
         revieweeId: row.reviewee_id,
         groupId: row.group_id,
         isSelfAppraisal: row.is_self_appraisal ?? false,
+        relationship: row.relationship ?? undefined,
         ratings: row.ratings ?? {},
+        ratingComments: row.rating_comments ?? {},
+        keyAchievements: row.key_achievements ?? '',
+        finalComment: row.final_comment ?? '',
         feedback: {
           strengths: row.feedback_strengths ?? '',
           improvements: row.feedback_improvements ?? '',
@@ -124,10 +122,9 @@ export async function syncAppraisalsFromSupabase(): Promise<Record<string, Appra
       fromCloud[getAppraisalKey(row.reviewer_id, row.reviewee_id)] = submission;
     }
 
-    // Merge: cloud wins over local cache for the same key
     const local = loadAppraisalsFromStorage();
     const merged = { ...local, ...fromCloud };
-    saveAppraisalsToStorage(merged); // update local cache with latest cloud data
+    saveAppraisalsToStorage(merged);
     return merged;
   } catch (err) {
     console.error('Unexpected error syncing from Supabase:', err);
@@ -137,9 +134,6 @@ export async function syncAppraisalsFromSupabase(): Promise<Record<string, Appra
 
 // ─── Mock seed (demo data) ───────────────────────────────────────────────────
 
-/**
- * Seed realistic mock appraisals for demonstration and testing of the HR tracking interface
- */
 export function seedRealisticAppraisals(
   people: Person[],
   groups: AllocatedGroup[],
@@ -148,26 +142,22 @@ export function seedRealisticAppraisals(
   const current = loadAppraisalsFromStorage();
   const updated: Record<string, AppraisalSubmission> = { ...current };
 
-  const sampleStrengths = [
-    'Outstanding work ethic and meticulous attention to detail during peak operational shifts.',
-    'Consistently proactive in unblocking cross-departmental bottlenecks between Operations and IT.',
-    'Exceptional communicator who remains calm and reassuring even during high-stress audits.',
-    'Very dependable with equipment and adheres strictly to safety and facility security SOPs.',
-    'Always punctual, responsive on radio/mobile, and willing to mentor junior team members.',
-    'Provides thorough and accurate documentation that makes audit trails seamless.',
+  const perfItems = loadPerformanceRatings();
+
+  const sampleAchievements = [
+    'Reduced errors at the verification desk from 10% to 2%. Trained 3 new staff on the intake process. Received positive client feedback in August.',
+    'Maintained good performance throughout the period. Led queue management during the peak month of October.',
+    'No major achievement noted. Maintained consistent performance and attendance standards.',
+    'Received zero customer complaints this quarter. Assisted in onboarding 5 new colleagues and cross-trained in two departments.',
+    'Led the team during supervisor absence without disruption. Received commendation from department head for handling the annual audit.',
   ];
 
-  const sampleImprovements = [
-    'Could provide earlier advance notice when unexpected equipment downtime or delays occur.',
-    'Encouraged to speak up more in joint inter-departmental briefings with senior managers.',
-    'Recommend further cross-training on automated digital inventory and reporting tools.',
-    'Can delegate minor routine tasks more readily to maintain focus on strategic items.',
-  ];
-
-  const sampleObservations = [
-    'From our departmental perspective, coordination has improved markedly over the last quarter.',
-    'Smooth handover during shift changeover; consistently accurate logbook entries.',
-    'Constructive partner in resolving field escalations swiftly.',
+  const sampleFinalComments = [
+    'Recommend for consideration in the next leadership programme. Consistently goes above and beyond.',
+    'Needs coaching on time management and communication with external clients.',
+    'No specific recommendation at this time. Good overall contributor.',
+    'Suggest pairing with a senior colleague for mentorship to accelerate growth.',
+    '',
   ];
 
   let added = 0;
@@ -184,15 +174,27 @@ export function seedRealisticAppraisals(
       if (updated[key]) continue;
 
       const isSubmitted = Math.random() > 0.15;
-      const baseRating = 3 + Math.floor(Math.random() * 3);
+      const baseRating = 5 + Math.floor(Math.random() * 5); // 5-9 on 1-10 scale
 
       const ratings: Record<string, number> = {};
-      for (const crit of APPRAISAL_CRITERIA) {
-        const jitter = Math.random() > 0.7 ? (Math.random() > 0.5 ? 1 : -1) : 0;
-        ratings[crit.id] = Math.max(1, Math.min(5, baseRating + jitter));
+      for (const item of perfItems) {
+        const jitter = Math.random() > 0.6 ? (Math.random() > 0.5 ? 1 : -1) : 0;
+        ratings[item.id] = Math.max(1, Math.min(10, baseRating + jitter));
       }
 
+      const ratingComments: Record<string, string> = {};
+      // Add a comment for about 60% of items
+      for (const item of perfItems) {
+        if (Math.random() > 0.4) {
+          ratingComments[item.id] = '';
+        }
+      }
+
+      const achievements = sampleAchievements[Math.floor(Math.random() * sampleAchievements.length)];
+      const finalComment = sampleFinalComments[Math.floor(Math.random() * sampleFinalComments.length)];
       const submissionDate = new Date(now.getTime() - Math.random() * 7 * 86400000);
+
+      const relationships = ['Manager / Supervisor', 'Peer / Colleague', 'Direct Report'] as const;
 
       updated[key] = {
         id: key,
@@ -200,11 +202,15 @@ export function seedRealisticAppraisals(
         revieweeId: group.revieweeId,
         groupId: group.id,
         isSelfAppraisal: false,
+        relationship: relationships[Math.floor(Math.random() * relationships.length)],
         ratings,
+        ratingComments,
+        keyAchievements: achievements,
+        finalComment,
         feedback: {
-          strengths: sampleStrengths[Math.floor(Math.random() * sampleStrengths.length)],
-          improvements: sampleImprovements[Math.floor(Math.random() * sampleImprovements.length)],
-          specificObservation: sampleObservations[Math.floor(Math.random() * sampleObservations.length)],
+          strengths: achievements,
+          improvements: finalComment,
+          specificObservation: '',
         },
         status: isSubmitted ? 'submitted' : 'draft',
         updatedAt: submissionDate.toISOString(),

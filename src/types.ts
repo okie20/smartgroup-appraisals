@@ -57,11 +57,11 @@ export interface AllocatedGroup {
   id: string;
   number: number;
   name: string;
-  revieweeId: string; // The Employee Being Reviewed (classified separately, not a member of the reviewing group)
+  revieweeId: string;
   primaryDepartment: string;
   clusterId: string;
-  memberIds: string[]; // Reviewing panel members (~7 peers). Crucially excludes revieweeId.
-  leadId?: string; // Backwards-compatible coordinator
+  memberIds: string[];
+  leadId?: string;
   designatedSupervisorId?: string;
   designatedSupervisorName?: string;
   designatedSupervisorRole?: string;
@@ -87,13 +87,14 @@ export interface AllocationStats {
 }
 
 export interface GroupingConfig {
-  targetGroupSize: number; // default 7
-  minGroupSize: number;    // default 6
-  maxGroupSize: number;    // default 8
-  sameDeptWeight: number;  // 0 - 100 (e.g. 70)
+  targetGroupSize: number;
+  minGroupSize: number;
+  maxGroupSize: number;
+  sameDeptWeight: number;
   randomSeed: number;
 }
 
+// ── Legacy criterion type (kept for rubric editor / seed compat) ─────────────
 export interface AppraisalCriterion {
   id: string;
   category: string;
@@ -108,7 +109,31 @@ export interface AppraisalCriterion {
   };
 }
 
+// ── New 1-10 performance rating item ─────────────────────────────────────────
+export type RelationshipType = 'Manager / Supervisor' | 'Peer / Colleague' | 'Direct Report';
+
+export interface PerformanceRatingItem {
+  /** e.g. "time-keeping" */
+  id: string;
+  /** e.g. "Time Keeping (Punctuality)" */
+  title: string;
+  /** Section label shown as a sub-header, e.g. "SECTION B" */
+  section?: string;
+  /** Multi-line guidance shown beneath the title */
+  description: string;
+  /** Left-end label for the scale, e.g. "Always late" */
+  lowLabel: string;
+  /** Right-end label, e.g. "Always on time" */
+  highLabel: string;
+  /** Whether this item is only shown when evaluating a supervisor */
+  supervisorOnly?: boolean;
+  /** Free-text comment is optional by default; set true to make it required */
+  commentRequired?: boolean;
+}
+
+// ── Submission shape ──────────────────────────────────────────────────────────
 export interface AppraisalFeedback {
+  /** legacy compat */
   strengths: string;
   improvements: string;
   specificObservation: string;
@@ -120,8 +145,24 @@ export interface AppraisalSubmission {
   revieweeId: string;
   groupId: string;
   isSelfAppraisal?: boolean;
-  ratings: Record<string, number>; // criterionId -> 1..5
+
+  // Section A — demographics (captured inside the form)
+  relationship?: RelationshipType;
+
+  // Section B — 1-10 ratings keyed by PerformanceRatingItem.id
+  ratings: Record<string, number>;
+  // comments per rating item, keyed by PerformanceRatingItem.id
+  ratingComments: Record<string, string>;
+
+  // Section C — key achievements
+  keyAchievements: string;
+
+  // Section D — final comment
+  finalComment: string;
+
+  // Legacy feedback block (kept for backwards compat with seeded data)
   feedback: AppraisalFeedback;
+
   status: 'draft' | 'submitted';
   updatedAt: string;
   submittedAt?: string;
@@ -134,4 +175,3 @@ export type AppMode = 'admin' | 'portal';
 export type UserSession =
   | { type: 'admin'; username: string }
   | { type: 'employee'; person: Person };
-
