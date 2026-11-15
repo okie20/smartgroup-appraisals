@@ -41,10 +41,7 @@ interface AppraisalFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   reviewer: Person;
-  /** If provided the reviewer picked the reviewee via the selector; otherwise it was pre-set by the portal */
   reviewee: Person;
-  /** All people — used for the "employee being reviewed" dropdown */
-  allPeople: Person[];
   groupId: string;
   isSelfAppraisal?: boolean;
   annexRuleTitle?: string;
@@ -246,7 +243,6 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
   onClose,
   reviewer,
   reviewee: initialReviewee,
-  allPeople,
   groupId,
   isSelfAppraisal = false,
   annexRuleTitle,
@@ -256,7 +252,6 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
   onSubmitFinal,
 }) => {
   // ── Section A ──
-  const [selectedRevieweeId, setSelectedRevieweeId] = useState(initialReviewee.id);
   const [relationship, setRelationship] = useState<RelationshipType | ''>('');
 
   // ── Section B ──
@@ -277,10 +272,7 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
   const [perfItems, setPerfItems] = useState<PerformanceRatingItem[]>(() => loadPerformanceRatings());
   const [supItems, setSupItems] = useState<PerformanceRatingItem[]>(() => loadSupervisorRatings());
 
-  const reviewee = useMemo(
-    () => allPeople.find((p) => p.id === selectedRevieweeId) || initialReviewee,
-    [selectedRevieweeId, allPeople, initialReviewee]
-  );
+  const reviewee = initialReviewee;
 
   const revieweeIsSupervisor = useMemo(() => isPersonSupervisor(reviewee), [reviewee]);
 
@@ -300,8 +292,6 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
     setPerfItems(loadPerformanceRatings());
     setSupItems(loadSupervisorRatings());
 
-    setSelectedRevieweeId(initialReviewee.id);
-
     if (initialSubmission) {
       setRelationship((initialSubmission.relationship as RelationshipType | '') || '');
       setRatings(initialSubmission.ratings || {});
@@ -318,7 +308,7 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
 
     setShowConfirmSubmit(false);
     setSaveStatus(null);
-  }, [isOpen, initialSubmission, initialReviewee.id]);
+  }, [isOpen, initialSubmission]);
 
   if (!isOpen) return null;
 
@@ -451,23 +441,17 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
                 {/* Employee being reviewed */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Employee Being Reviewed <span className="text-rose-500">*</span>
+                    Employee Being Reviewed
                   </label>
-                  <p className="text-[11px] text-slate-500 mb-1.5">
-                    Select the name of the employee you are evaluating.
-                  </p>
-                  <select
-                    disabled={isSubmitted}
-                    value={selectedRevieweeId}
-                    onChange={(e) => setSelectedRevieweeId(e.target.value)}
-                    className="w-full text-xs text-slate-900 bg-white border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-500"
-                  >
-                    {allPeople.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} — {p.role} · {p.department}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5">
+                    <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0">
+                      {reviewee.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">{reviewee.name}</p>
+                      <p className="text-[11px] text-slate-500">{reviewee.role} · {reviewee.department}</p>
+                    </div>
+                  </div>
                   {revieweeIsSupervisor && (
                     <p className="mt-1.5 text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg px-2.5 py-1.5 flex items-center gap-1.5">
                       <Info className="w-3 h-3 shrink-0" />
