@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Person, AppraisalSubmission, RelationshipType, PerformanceRatingItem, isPersonSupervisor } from '../types';
 import { loadPerformanceRatings, loadSupervisorRatings } from '../data/performanceRatings';
+import { getKpisForRole, RoleKpiItem } from '../data/roleKpis';
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -158,6 +159,86 @@ const RatingRow: React.FC<RatingRowProps> = ({
   );
 };
 
+// ── KPI rating row (role-specific, same visual as RatingRow) ─────────────────
+
+interface KpiRatingRowProps {
+  kpi: RoleKpiItem;
+  value: number;
+  comment: string;
+  disabled: boolean;
+  onChange: (val: number) => void;
+  onCommentChange: (val: string) => void;
+  index: number;
+}
+
+const KpiRatingRow: React.FC<KpiRatingRowProps> = ({
+  kpi, value, comment, disabled, onChange, onCommentChange, index,
+}) => {
+  const band = getRatingBand(value);
+  return (
+    <div className={`border rounded-xl p-4 bg-white transition-colors ${value > 0 ? 'border-indigo-200' : 'border-slate-200'}`}>
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-mono font-bold text-slate-400 shrink-0">KPI {index + 1}.</span>
+            <h4 className="text-sm font-bold text-slate-900">{kpi.title}</h4>
+            {value > 0 && (
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${band.bg} ${band.color}`}>
+                {band.label}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 mt-1 leading-relaxed">{kpi.description}</p>
+        </div>
+        {value > 0 && (
+          <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-black text-lg border ${band.bg} ${band.color}`}>
+            {value}
+          </div>
+        )}
+      </div>
+      <div className="space-y-2">
+        <div className="flex items-center gap-1 flex-wrap">
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((score) => {
+            const isSelected = value === score;
+            let btnClass = 'w-8 h-8 rounded-lg font-bold text-xs transition-all flex items-center justify-center ';
+            if (isSelected) {
+              if (score >= 9) btnClass += 'bg-emerald-600 text-white ring-2 ring-emerald-600 ring-offset-1 shadow-sm';
+              else if (score >= 7) btnClass += 'bg-blue-600 text-white ring-2 ring-blue-600 ring-offset-1 shadow-sm';
+              else if (score >= 5) btnClass += 'bg-amber-500 text-white ring-2 ring-amber-500 ring-offset-1 shadow-sm';
+              else if (score >= 3) btnClass += 'bg-orange-500 text-white ring-2 ring-orange-500 ring-offset-1 shadow-sm';
+              else btnClass += 'bg-rose-500 text-white ring-2 ring-rose-500 ring-offset-1 shadow-sm';
+            } else if (disabled) {
+              btnClass += 'bg-slate-100 text-slate-400 cursor-not-allowed';
+            } else {
+              btnClass += 'bg-slate-100 hover:bg-indigo-100 hover:text-indigo-700 text-slate-700 active:scale-95 cursor-pointer';
+            }
+            return (
+              <button key={score} type="button" disabled={disabled} onClick={() => onChange(score)} className={btnClass}>
+                {score}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex justify-between text-[10px] text-slate-400 font-medium px-0.5">
+          <span>1 = {kpi.lowLabel}</span>
+          <span>10 = {kpi.highLabel}</span>
+        </div>
+      </div>
+      <div className="mt-3">
+        <label className="block text-[11px] font-semibold text-slate-600 mb-1">Comment (optional)</label>
+        <textarea
+          rows={2}
+          disabled={disabled}
+          value={comment}
+          onChange={(e) => onCommentChange(e.target.value)}
+          placeholder="Add a specific observation…"
+          className="w-full text-xs text-slate-900 bg-white border border-slate-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-500 transition-colors resize-none"
+        />
+      </div>
+    </div>
+  );
+};
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
@@ -203,7 +284,10 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
 
   const revieweeIsSupervisor = useMemo(() => isPersonSupervisor(reviewee), [reviewee]);
 
-  // Which rating items to show
+  // Role-specific KPI group (Section A Core KPIs)
+  const roleKpiGroup = useMemo(() => getKpisForRole(reviewee.role), [reviewee.role]);
+
+  // Which standard + supervisor rating items to show in Section B
   const activeItems = useMemo(
     () => (revieweeIsSupervisor ? [...perfItems, ...supItems] : perfItems),
     [revieweeIsSupervisor, perfItems, supItems]
@@ -246,9 +330,13 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
   const allRated = activeItems.every(
     (item) => typeof ratings[item.id] === 'number' && ratings[item.id] >= 1
   );
+  const allKpisRated = !roleKpiGroup || roleKpiGroup.kpis.every(
+    (k) => typeof ratings[k.id] === 'number' && ratings[k.id] >= 1
+  );
   const canSubmit =
-    !isSelfAppraisal && relationship !== '' &&
+    relationship !== '' &&
     allRated &&
+    allKpisRated &&
     keyAchievements.trim().length >= 10;
 
   // ── handlers ─────────────────────────────────────────────────────────────
@@ -307,15 +395,9 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
         <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-start justify-between gap-4 shrink-0">
           <div>
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              {isSelfAppraisal ? (
-                <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700 bg-purple-100 px-2.5 py-0.5 rounded-full">
-                  Self-Assessment
-                </span>
-              ) : (
-                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full">
-                  360° Peer Appraisal
-                </span>
-              )}
+              <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full">
+                Peer Appraisal
+              </span>
               {annexRuleTitle && (
                 <span className="text-[11px] font-medium text-slate-700 bg-white border border-slate-300 px-2 py-0.5 rounded-full flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3 text-indigo-500" />
@@ -328,9 +410,7 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
                 </span>
               )}
             </div>
-            <h2 className="text-base font-black text-slate-900">
-              {isSelfAppraisal ? 'Self-Assessment Form' : 'Staff Performance Appraisal Form'}
-            </h2>
+            <h2 className="text-base font-black text-slate-900">Staff Performance Appraisal Form</h2>
             <p className="text-[11px] text-slate-500 mt-0.5">
               Reviewer: <strong className="text-slate-700">{reviewer.name}</strong>
               {' · '}{reviewer.department}
@@ -374,26 +454,20 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
                     Employee Being Reviewed <span className="text-rose-500">*</span>
                   </label>
                   <p className="text-[11px] text-slate-500 mb-1.5">
-                    Select or type the name of the employee you are evaluating.
+                    Select the name of the employee you are evaluating.
                   </p>
-                  {isSelfAppraisal ? (
-                    <div className="text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 font-medium">
-                      {reviewee.name} — {reviewee.role} · {reviewee.department}
-                    </div>
-                  ) : (
-                    <select
-                      disabled={isSubmitted}
-                      value={selectedRevieweeId}
-                      onChange={(e) => setSelectedRevieweeId(e.target.value)}
-                      className="w-full text-xs text-slate-900 bg-white border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-500"
-                    >
-                      {allPeople.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} — {p.role} · {p.department}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                  <select
+                    disabled={isSubmitted}
+                    value={selectedRevieweeId}
+                    onChange={(e) => setSelectedRevieweeId(e.target.value)}
+                    className="w-full text-xs text-slate-900 bg-white border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-500"
+                  >
+                    {allPeople.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} — {p.role} · {p.department}
+                      </option>
+                    ))}
+                  </select>
                   {revieweeIsSupervisor && (
                     <p className="mt-1.5 text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg px-2.5 py-1.5 flex items-center gap-1.5">
                       <Info className="w-3 h-3 shrink-0" />
@@ -403,8 +477,7 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
                 </div>
 
                 {/* Relationship */}
-                {!isSelfAppraisal && (
-                  <div>
+                <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
                       Your Relationship to the Employee <span className="text-rose-500">*</span>
                     </label>
@@ -431,9 +504,34 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
                       <p className="text-[11px] text-amber-600 mt-1.5">Please select your relationship to continue.</p>
                     )}
                   </div>
-                )}
               </div>
             </section>
+
+            {/* ════ SECTION A2: ROLE-SPECIFIC CORE KPIs ════ */}
+            {roleKpiGroup && (
+              <section>
+                <SectionHeader
+                  icon={<Star className="w-4 h-4 text-indigo-500" />}
+                  label="SECTION A — CORE KPIs"
+                  title={`${roleKpiGroup.roleLabel} — Key Performance Indicators`}
+                  subtitle={`These questions are specific to the ${roleKpiGroup.roleLabel} role and measure core job performance against defined KPIs.`}
+                />
+                <div className="mt-4 space-y-4">
+                  {roleKpiGroup.kpis.map((kpi, idx) => (
+                    <KpiRatingRow
+                      key={kpi.id}
+                      kpi={kpi}
+                      value={ratings[kpi.id] || 0}
+                      comment={ratingComments[kpi.id] || ''}
+                      disabled={isSubmitted}
+                      onChange={(v) => handleRating(kpi.id, v)}
+                      onCommentChange={(v) => handleComment(kpi.id, v)}
+                      index={idx}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* ════ 1-10 SCALE LEGEND ════ */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
@@ -466,7 +564,7 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
                     <span className={`font-bold ${avgBand.color}`}>{avgBand.label}</span>
                   </div>
                   <div className="ml-auto text-[11px] text-slate-500">
-                    {Object.values(ratings).filter((v) => v >= 1).length} / {activeItems.length} rated
+                    {Object.values(ratings).filter((v) => v >= 1).length} / {activeItems.length + (roleKpiGroup?.kpis.length ?? 0)} rated
                   </div>
                 </div>
               )}
