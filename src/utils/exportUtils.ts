@@ -203,3 +203,167 @@ export function parseRosterText(rawText: string): Person[] {
 
   return results;
 }
+
+// ─── Excel Export: All Panels ────────────────────────────────────────────────
+import * as XLSX from 'xlsx';
+
+/**
+ * Exports a full Excel workbook with two sheets:
+ *   Sheet 1 — "All Panels"  : one row per reviewer per group (flat list)
+ *   Sheet 2 — "Panel Summary" : one row per group with reviewer names in columns
+ */
+export function exportPanelsToExcel(
+  groups: AllocatedGroup[],
+  peopleMap: Map<string, Person>
+): void {
+  const wb = XLSX.utils.book_new();
+
+  // ── Sheet 1: Flat reviewer list ──────────────────────────────────────────
+  const flatHeaders = [
+    'Panel #',
+    'Panel Name',
+    'Employee Being Reviewed',
+    'Employee ID',
+    'Role',
+    'Department',
+    'Facility',
+    'Annex A Rule',
+    'Reviewer #',
+    'Reviewer Name',
+    'Reviewer ID',
+    'Reviewer Role',
+    'Reviewer Department',
+    'Reviewer Facility',
+    'Is Designated Supervisor',
+  ];
+
+  const flatRows: (string | number)[][] = [];
+
+  for (const group of groups) {
+    const reviewee = peopleMap.get(group.revieweeId);
+    const annexRule = reviewee
+      ? findMatchingAnnexARule(reviewee.role, reviewee.department)
+      : undefined;
+    const annexText = annexRule
+      ? `Rule #${annexRule.orderNumber}: ${annexRule.functionTitle}`
+      : 'Standard Peer Allocation';
+
+    group.memberIds.forEach((memberId, idx) => {
+      const reviewer = peopleMap.get(memberId);
+      const isSupervisor = group.designatedSupervisorId === memberId;
+      flatRows.push([
+        group.number,
+        group.name,
+        reviewee?.name ?? 'Unknown',
+        reviewee?.id ?? group.revieweeId,
+        reviewee?.role ?? '',
+        reviewee?.department ?? group.primaryDepartment,
+        reviewee?.facility ?? '',
+        annexText,
+        idx + 1,
+        reviewer?.name ?? memberId,
+        reviewer?.id ?? memberId,
+        reviewer?.role ?? '',
+        reviewer?.department ?? '',
+        reviewer?.facility ?? '',
+        isSupervisor ? 'YES' : '',
+      ]);
+    });
+  }
+
+  const ws1 = XLSX.utils.aoa_to_sheet([flatHeaders, ...flatRows]);
+
+  // Column widths
+  ws1['!cols'] = [
+    { wch: 8 },  // Panel #
+    { wch: 28 }, // Panel Name
+    { wch: 24 }, // Employee Being Reviewed
+    { wch: 12 }, // Employee ID
+    { wch: 26 }, // Role
+    { wch: 26 }, // Department
+    { wch: 12 }, // Facility
+    { wch: 40 }, // Annex A Rule
+    { wch: 10 }, // Reviewer #
+    { wch: 24 }, // Reviewer Name
+    { wch: 12 }, // Reviewer ID
+    { wch: 26 }, // Reviewer Role
+    { wch: 26 }, // Reviewer Department
+    { wch: 12 }, // Reviewer Facility
+    { wch: 22 }, // Is Designated Supervisor
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws1, 'All Panels');
+
+  // ── Sheet 2: Summary — one row per group ─────────────────────────────────
+  // Find the max panel size to know how many Reviewer columns to create
+  const maxPanelSize = groups.reduce((max, g) => Math.max(max, g.memberIds.length), 0);
+
+  const summaryHeaders = [
+    'Panel #',
+    'Panel Name',
+    'Employee Being Reviewed',
+    'Employee ID',
+    'Role',
+    'Department',
+    'Facility',
+    'Annex A Rule',
+    'Panel Size',
+    ...Array.from({ length: maxPanelSize }, (_, i) => `Reviewer ${i + 1}`),
+    ...Array.from({ length: maxPanelSize }, (_, i) => `Reviewer ${i + 1} Dept`),
+  ];
+
+  const summaryRows: (string | number)[][] = groups.map((group) => {
+    const reviewee = peopleMap.get(group.revieweeId);
+    const annexRule = reviewee
+      ? findMatchingAnnexARule(reviewee.role, reviewee.department)
+      : undefined;
+    const annexText = annexRule
+      ? `Rule #${annexRule.orderNumber}: ${annexRule.functionTitle}`
+      : 'Standard Peer Allocation';
+
+    const reviewerNames = Array.from({ length: maxPanelSize }, (_, i) => {
+      const p = peopleMap.get(group.memberIds[i] ?? '');
+      return p ? p.name : '';
+    });
+
+    const reviewerDepts = Array.from({ length: maxPanelSize }, (_, i) => {
+      const p = peopleMap.get(group.memberIds[i] ?? '');
+      return p ? p.department : '';
+    });
+
+    return [
+      group.number,
+      group.name,
+      reviewee?.name ?? 'Unknown',
+      reviewee?.id ?? group.revieweeId,
+      reviewee?.role ?? '',
+      reviewee?.department ?? group.primaryDepartment,
+      reviewee?.facility ?? '',
+      annexText,
+      group.memberIds.length,
+      ...reviewerNames,
+      ...reviewerDepts,
+    ];
+  });
+
+  const ws2 = XLSX.utils.aoa_to_sheet([summaryHeaders, ...summaryRows]);
+
+  ws2['!cols'] = [
+    { wch: 8 },
+    { wch: 28 },
+    { wch: 24 },
+    { wch: 12 },
+    { wch: 26 },
+    { wch: 26 },
+    { wch: 12 },
+    { wch: 40 },
+    { wch: 10 },
+    ...Array.from({ length: maxPanelSize * 2 }, () => ({ wch: 22 })),
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws2, 'Panel Summary');
+
+  // ── Write & download ──────────────────────────────────────────────────────
+  const date = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `Appraisal_Panels_${date}.xlsx`);
+}
