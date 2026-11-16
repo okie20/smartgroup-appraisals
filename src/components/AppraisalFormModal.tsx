@@ -35,6 +35,31 @@ function calcAverage(ratings: Record<string, number>): number {
   return Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1));
 }
 
+/**
+ * Section B (general questions): scored out of 50%.
+ * Each item is 1–10, max total = items × 10.
+ * We scale that to 50.
+ */
+function calcSectionBScore(ratings: Record<string, number>, itemIds: string[]): number {
+  const vals = itemIds.map((id) => ratings[id] || 0).filter((v) => v >= 1);
+  if (!vals.length) return 0;
+  const raw = vals.reduce((a, b) => a + b, 0);
+  const maxRaw = itemIds.length * 10;
+  return Number(((raw / maxRaw) * 50).toFixed(1));
+}
+
+/**
+ * Role KPI section (supervisor-specific questions): scored out of 100%.
+ * Each item is 1–10, max total = items × 10. Scale to 100.
+ */
+function calcKpiScore(ratings: Record<string, number>, kpiIds: string[]): number {
+  const vals = kpiIds.map((id) => ratings[id] || 0).filter((v) => v >= 1);
+  if (!vals.length) return 0;
+  const raw = vals.reduce((a, b) => a + b, 0);
+  const maxRaw = kpiIds.length * 10;
+  return Number(((raw / maxRaw) * 100).toFixed(1));
+}
+
 // ── props ──────────────────────────────────────────────────────────────────────
 
 interface AppraisalFormModalProps {
@@ -279,11 +304,8 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
   // Role-specific KPI group (Section A Core KPIs)
   const roleKpiGroup = useMemo(() => getKpisForRole(reviewee.role), [reviewee.role]);
 
-  // Which standard + supervisor rating items to show in Section B
-  const activeItems = useMemo(
-    () => (revieweeIsSupervisor ? [...perfItems, ...supItems] : perfItems),
-    [revieweeIsSupervisor, perfItems, supItems]
-  );
+  // Section B uses only the standard performance items (no supervisor extras)
+  const activeItems = perfItems;
 
   // ── Init / reset on open ──────────────────────────────────────────────────
   useEffect(() => {
@@ -313,8 +335,11 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
   if (!isOpen) return null;
 
   const isSubmitted = initialSubmission?.status === 'submitted';
-  const avgScore = calcAverage(ratings);
-  const avgBand = getRatingBand(avgScore);
+
+  // Scores
+  const sectionBScore = calcSectionBScore(ratings, perfItems.map((i) => i.id));
+  const kpiScore = roleKpiGroup ? calcKpiScore(ratings, roleKpiGroup.kpis.map((k) => k.id)) : null;
+  const avgScore = calcAverage(ratings); // kept for confirm dialog
 
   // Validation
   const allRated = activeItems.every(
@@ -538,20 +563,33 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
                 ))}
               </div>
 
-              {/* Average score strip */}
-              {avgScore > 0 && (
-                <div className={`mt-3 flex items-center gap-3 rounded-lg border px-3 py-2 ${avgBand.bg}`}>
-                  <Star className={`w-4 h-4 shrink-0 ${avgBand.color}`} />
-                  <div className="text-xs">
-                    <span className={`font-black text-lg ${avgBand.color}`}>{avgScore}</span>
-                    <span className="text-slate-500 ml-1">/ 10 avg · </span>
-                    <span className={`font-bold ${avgBand.color}`}>{avgBand.label}</span>
-                  </div>
-                  <div className="ml-auto text-[11px] text-slate-500">
-                    {Object.values(ratings).filter((v) => v >= 1).length} / {activeItems.length + (roleKpiGroup?.kpis.length ?? 0)} rated
+              {/* Live score strips */}
+              <div className="mt-3 space-y-2">
+                {/* Section B score */}
+                <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  <span className="text-[11px] font-bold text-amber-800">Section B — General Performance</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-black text-amber-700">{sectionBScore > 0 ? sectionBScore : '—'}</span>
+                    <span className="text-[11px] text-amber-600 font-semibold">/ 50%</span>
+                    <span className="text-[11px] text-amber-600">
+                      ({Object.values(ratings).filter((_, i) => perfItems.map(p => p.id).includes(Object.keys(ratings)[i]) && Object.values(ratings)[i] >= 1).length}/{perfItems.length} rated)
+                    </span>
                   </div>
                 </div>
-              )}
+                {/* KPI score */}
+                {roleKpiGroup && (
+                  <div className="flex items-center justify-between bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2">
+                    <span className="text-[11px] font-bold text-indigo-800">Section A KPIs — {roleKpiGroup.roleLabel}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-black text-indigo-700">{kpiScore !== null && kpiScore > 0 ? kpiScore : '—'}</span>
+                      <span className="text-[11px] text-indigo-600 font-semibold">/ 100%</span>
+                      <span className="text-[11px] text-indigo-600">
+                        ({roleKpiGroup.kpis.filter(k => (ratings[k.id] || 0) >= 1).length}/{roleKpiGroup.kpis.length} rated)
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* ════ SECTION B: PERFORMANCE RATINGS ════ */}
@@ -573,33 +611,6 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
                 ))}
               </div>
             </section>
-
-            {/* ════ SECTION B2: SUPERVISOR-SPECIFIC ════ */}
-            {revieweeIsSupervisor && supItems.length > 0 && (
-              <section>
-                <SectionHeader
-                  icon={<ShieldCheck className="w-4 h-4 text-indigo-500" />}
-                  label="SECTION B2"
-                  title="Supervisor / Manager Specific Ratings"
-                  subtitle="These additional questions apply because the employee being evaluated holds a supervisory or management role."
-                />
-                <div className="mt-4 space-y-4">
-                  {supItems.map((item, idx) => (
-                    <RatingRow
-                      key={item.id}
-                      item={item}
-                      value={ratings[item.id] || 0}
-                      comment={ratingComments[item.id] || ''}
-                      disabled={isSubmitted}
-                      onChange={(v) => handleRating(item.id, v)}
-                      onCommentChange={(v) => handleComment(item.id, v)}
-                      index={idx}
-                      isSupervisorSection
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
 
             {/* ════ SECTION C: KEY ACHIEVEMENTS ════ */}
             <section>
@@ -711,8 +722,13 @@ export const AppraisalFormModal: React.FC<AppraisalFormModalProps> = ({
               <h3 className="text-base font-black text-slate-900">Confirm Final Submission</h3>
               <p className="text-xs text-slate-600 mt-2 leading-relaxed">
                 You are submitting your evaluation for{' '}
-                <strong className="text-slate-900">{reviewee.name}</strong> with an average score of{' '}
-                <strong className={avgBand.color}>{avgScore} / 10</strong> ({avgBand.label}).
+                <strong className="text-slate-900">{reviewee.name}</strong>.
+                {sectionBScore > 0 && (
+                  <span> Section B: <strong className="text-amber-700">{sectionBScore}/50%</strong></span>
+                )}
+                {kpiScore !== null && kpiScore > 0 && (
+                  <span> · KPIs: <strong className="text-indigo-700">{kpiScore}/100%</strong></span>
+                )}
               </p>
               <div className="mt-3 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
                 Once submitted, this record is sealed and forwarded to HR. It cannot be changed afterwards.

@@ -498,23 +498,6 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
           </span>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-            Self-Assessments
-          </span>
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-2xl font-black text-purple-700">
-              {metrics.completedSelfCount}
-            </span>
-            <span className="text-xs text-slate-400 font-medium">
-              / {metrics.totalEmployees}
-            </span>
-          </div>
-          <span className="text-[11px] text-purple-700 mt-1 block">
-            Individual self-reviews
-          </span>
-        </div>
-
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs col-span-2 sm:col-span-4 lg:col-span-1">
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
             Avg Organization Score
@@ -653,7 +636,6 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
                   <th className="py-3 px-4">Department</th>
                   <th className="py-3 px-4">Panel Progress</th>
                   <th className="py-3 px-4">Avg Peer Score</th>
-                  <th className="py-3 px-4">Self-Assessment</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -733,19 +715,6 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
                               </div>
                             ) : (
                               <span className="text-slate-400 italic">No ratings yet</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4">
-                            {item.selfSub?.status === 'submitted' ? (
-                              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded flex items-center gap-1 w-fit">
-                                <CheckCircle2 className="w-3 h-3" /> Submitted
-                              </span>
-                            ) : item.selfSub?.status === 'draft' ? (
-                              <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded flex items-center gap-1 w-fit">
-                                <Clock className="w-3 h-3" /> Draft
-                              </span>
-                            ) : (
-                              <span className="text-[11px] text-slate-400">Pending</span>
                             )}
                           </td>
                           <td className="py-3 px-4 text-right">
