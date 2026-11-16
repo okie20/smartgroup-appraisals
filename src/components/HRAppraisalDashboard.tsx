@@ -176,6 +176,7 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
     }
 
     const orgAvgScore = scoreCount > 0 ? Number((scoreSum / scoreCount).toFixed(2)) : 0;
+    const orgAvgPct = orgAvgScore > 0 ? Number(((orgAvgScore / 10) * 100).toFixed(1)) : 0;
     const completionPercent =
       totalExpectedReviews > 0
         ? Number(((completedPeerCount / totalExpectedReviews) * 100).toFixed(1))
@@ -190,6 +191,7 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
       completedSelfCount,
       totalEmployees: people.length,
       orgAvgScore,
+      orgAvgPct,
     };
   }, [submissions, totalExpectedReviews, people.length]);
 
@@ -300,6 +302,28 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
       });
 
       const avgReceivedScore = ratedCount > 0 ? Number((totalRatingSum / ratedCount).toFixed(1)) : 0;
+      // Convert to percentage out of 100 (raw scores are 1-10)
+      const avgReceivedPct = avgReceivedScore > 0 ? Number(((avgReceivedScore / 10) * 100).toFixed(1)) : 0;
+
+      // Per-question averages across all submitted reviews (for KPI breakdown)
+      const questionTotals: Record<string, { sum: number; count: number }> = {};
+      panelReviewerIds.forEach((reviewerId) => {
+        const sub = getAppraisalSubmission(submissions, reviewerId, person.id);
+        if (sub?.status === 'submitted') {
+          Object.entries(sub.ratings).forEach(([qId, score]) => {
+            if (score >= 1) {
+              if (!questionTotals[qId]) questionTotals[qId] = { sum: 0, count: 0 };
+              questionTotals[qId].sum += score;
+              questionTotals[qId].count += 1;
+            }
+          });
+        }
+      });
+      const questionAverages: Record<string, number> = {};
+      Object.entries(questionTotals).forEach(([qId, { sum, count }]) => {
+        questionAverages[qId] = Number((sum / count).toFixed(1));
+      });
+
       const selfSub = getAppraisalSubmission(submissions, person.id, person.id);
 
       // Check Annex A
@@ -316,6 +340,8 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
         completedReviews,
         panelDetails,
         avgReceivedScore,
+        avgReceivedPct,
+        questionAverages,
         selfSub,
         annexRule,
         isFullyComplete: totalPanel > 0 && completedReviews === totalPanel,
@@ -541,12 +567,12 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
           </span>
           <div className="flex items-baseline gap-1.5 mt-1">
             <span className="text-2xl font-black text-slate-900">
-              {metrics.orgAvgScore > 0 ? metrics.orgAvgScore : '—'}
+              {metrics.orgAvgPct > 0 ? metrics.orgAvgPct : '—'}
             </span>
-            <span className="text-xs text-slate-400 font-medium">/ 5.0</span>
+            <span className="text-xs text-slate-400 font-medium">/ 100%</span>
           </div>
           <span className="text-[11px] text-slate-500 mt-1 block">
-            Across 5 core competencies
+            Across all rating questions
           </span>
         </div>
       </div>
@@ -744,14 +770,20 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            {item.avgReceivedScore > 0 ? (
-                              <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                                <span>{item.avgReceivedScore}</span>
-                                <span className="text-slate-400 font-normal text-[11px]">/ 5.0</span>
+                            {item.avgReceivedPct > 0 ? (
+                              <div className="flex items-center gap-1.5">
+                                <div className="flex-1 max-w-[80px] h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full ${item.avgReceivedPct >= 80 ? 'bg-emerald-500' : item.avgReceivedPct >= 60 ? 'bg-blue-500' : item.avgReceivedPct >= 40 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                                    style={{ width: `${item.avgReceivedPct}%` }}
+                                  />
+                                </div>
+                                <span className="font-bold text-slate-900 text-xs">
+                                  {item.avgReceivedPct}%
+                                </span>
                               </div>
                             ) : (
-                              <span className="text-slate-400 italic">No ratings yet</span>
+                              <span className="text-slate-400 italic text-xs">No ratings yet</span>
                             )}
                           </td>
                           <td className="py-3 px-4 text-right">
@@ -791,66 +823,107 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
                         {isExpanded && (
                           <tr className="bg-slate-50/70 border-b border-slate-200">
                             <td colSpan={7} className="p-4 sm:p-6">
-                              <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-2xs space-y-3">
-                                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                                    7-Member Appraiser Panel for {item.person.name}
-                                  </h4>
-                                  <span className="text-xs text-slate-500">
-                                    Group #{item.group?.number || '—'}
-                                  </span>
-                                </div>
+                              <div className="space-y-4">
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                                  {item.panelDetails.map((pd, pidx) => {
-                                    const reviewer = pd.reviewer;
-                                    const sub = pd.submission;
-                                    const isDone = sub?.status === 'submitted';
-                                    const score = sub ? calculateAverageRating(sub.ratings) : 0;
+                                {/* ── KPI Performance Summary ── */}
+                                {Object.keys(item.questionAverages).length > 0 && (
+                                  <div className="bg-white border border-indigo-200 rounded-xl p-4 shadow-2xs">
+                                    <h4 className="text-xs font-black text-indigo-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                      <Star className="w-3.5 h-3.5 text-indigo-500" />
+                                      Performance Summary — Average Score per Question
+                                    </h4>
+                                    <div className="space-y-2">
+                                      {Object.entries(item.questionAverages)
+                                        .sort((a, b) => a[0].localeCompare(b[0]))
+                                        .map(([qId, avg]) => {
+                                          const pct = Number(((avg / 10) * 100).toFixed(0));
+                                          const label = qId
+                                            .replace(/^(kpi-[a-z]+-|kpi-)/, '')
+                                            .replace(/-/g, ' ')
+                                            .replace(/\b\w/g, (c) => c.toUpperCase());
+                                          const barColor =
+                                            pct >= 80 ? 'bg-emerald-500' :
+                                            pct >= 60 ? 'bg-blue-500' :
+                                            pct >= 40 ? 'bg-amber-500' : 'bg-rose-500';
+                                          const textColor =
+                                            pct >= 80 ? 'text-emerald-700' :
+                                            pct >= 60 ? 'text-blue-700' :
+                                            pct >= 40 ? 'text-amber-700' : 'text-rose-700';
+                                          return (
+                                            <div key={qId} className="flex items-center gap-3">
+                                              <span className="text-[11px] text-slate-600 w-48 shrink-0 truncate" title={label}>
+                                                {label}
+                                              </span>
+                                              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                <div
+                                                  className={`h-full rounded-full transition-all ${barColor}`}
+                                                  style={{ width: `${pct}%` }}
+                                                />
+                                              </div>
+                                              <span className={`text-[11px] font-bold w-12 text-right shrink-0 ${textColor}`}>
+                                                {avg}/10
+                                              </span>
+                                              <span className={`text-[11px] font-semibold w-10 text-right shrink-0 ${textColor}`}>
+                                                {pct}%
+                                              </span>
+                                            </div>
+                                          );
+                                        })}
+                                    </div>
+                                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                                      <span className="text-slate-500">Overall average across all questions</span>
+                                      <span className="font-black text-slate-900 text-sm">
+                                        {item.avgReceivedPct > 0 ? `${item.avgReceivedPct}%` : '—'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
 
-                                    if (!reviewer) return null;
-
-                                    return (
-                                      <div
-                                        key={reviewer.id}
-                                        className="border border-slate-200 rounded-lg p-3 bg-slate-50/50 flex flex-col justify-between"
-                                      >
-                                        <div>
-                                          <div className="flex items-start justify-between gap-1 mb-1">
-                                            <span className="text-[11px] font-bold text-slate-900">
-                                              {pidx + 1}. {reviewer.name}
-                                            </span>
-                                            {isDone ? (
-                                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-                                                Submitted
+                                {/* ── Panel member cards ── */}
+                                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
+                                  <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
+                                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                                      Appraiser Panel — {item.person.name}
+                                    </h4>
+                                    <span className="text-xs text-slate-500">Group #{item.group?.number || '—'}</span>
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                                    {item.panelDetails.map((pd, pidx) => {
+                                      const reviewer = pd.reviewer;
+                                      const sub = pd.submission;
+                                      const isDone = sub?.status === 'submitted';
+                                      const rawAvg = sub ? calculateAverageRating(sub.ratings) : 0;
+                                      const pct = rawAvg > 0 ? Number(((rawAvg / 10) * 100).toFixed(0)) : 0;
+                                      if (!reviewer) return null;
+                                      return (
+                                        <div key={reviewer.id} className="border border-slate-200 rounded-lg p-3 bg-slate-50/50 flex flex-col justify-between">
+                                          <div>
+                                            <div className="flex items-start justify-between gap-1 mb-1">
+                                              <span className="text-[11px] font-bold text-slate-900">
+                                                {pidx + 1}. {reviewer.name}
                                               </span>
-                                            ) : sub?.status === 'draft' ? (
-                                              <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
-                                                Draft
-                                              </span>
-                                            ) : (
-                                              <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-                                                Pending
-                                              </span>
-                                            )}
+                                              {isDone ? (
+                                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">Submitted</span>
+                                              ) : sub?.status === 'draft' ? (
+                                                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">Draft</span>
+                                              ) : (
+                                                <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Pending</span>
+                                              )}
+                                            </div>
+                                            <div className="text-[11px] text-slate-500">{reviewer.role} ({reviewer.department})</div>
                                           </div>
-                                          <div className="text-[11px] text-slate-500">
-                                            {reviewer.role} ({reviewer.department})
-                                          </div>
+                                          {isDone && (
+                                            <div className="mt-2 pt-2 border-t border-slate-200 text-[11px] flex items-center justify-between">
+                                              <span className="text-slate-500">Score:</span>
+                                              <span className="font-bold text-slate-900">{pct}%</span>
+                                            </div>
+                                          )}
                                         </div>
-
-                                        {isDone && (
-                                          <div className="mt-2 pt-2 border-t border-slate-200 text-[11px] flex items-center justify-between">
-                                            <span className="text-slate-500">Peer Rating:</span>
-                                            <span className="font-bold text-slate-900">
-                                              {score} / 5.0
-                                            </span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
+                                      );
+                                    })}
+                                  </div>
                                 </div>
+
                               </div>
                             </td>
                           </tr>
