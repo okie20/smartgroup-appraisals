@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Users,
   CheckCircle2,
   Clock,
+  RefreshCw,
   Download,
   Search,
   Sparkles,
@@ -42,6 +43,7 @@ interface HRAppraisalDashboardProps {
   onUpdateSubmissions: (subs: Record<string, AppraisalSubmission>) => void;
   onSelectEmployeeInPortal: (personId: string) => void;
   onOpenAnnexA: () => void;
+  onRefreshFromCloud: () => Promise<void>;
 }
 
 export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
@@ -52,6 +54,7 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
   onUpdateSubmissions,
   onSelectEmployeeInPortal,
   onOpenAnnexA,
+  onRefreshFromCloud,
 }) => {
   const [subView, setSubView] = useState<'reviewees' | 'reviewers'>('reviewees');
   const [searchQuery, setSearchQuery] = useState('');
@@ -61,6 +64,25 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showRubricEditor, setShowRubricEditor] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSynced, setLastSynced] = useState<Date | null>(null);
+
+  // Auto-refresh every 60 seconds while HR dashboard is open
+  useEffect(() => {
+    const run = () => {
+      onRefreshFromCloud().then(() => setLastSynced(new Date()));
+    };
+    run(); // immediate on mount
+    const interval = setInterval(run, 60000);
+    return () => clearInterval(interval);
+  }, [onRefreshFromCloud]);
+
+  const handleManualRefresh = async () => {
+    setIsSyncing(true);
+    await onRefreshFromCloud();
+    setLastSynced(new Date());
+    setIsSyncing(false);
+  };
 
   const getDirectLinkForPerson = (personId: string) => {
     if (typeof window === 'undefined') return `?staff=${personId}`;
@@ -438,6 +460,21 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
               <Trash2 className="w-3.5 h-3.5" />
               <span>Reset</span>
             </button>
+
+            <button
+              onClick={handleManualRefresh}
+              disabled={isSyncing}
+              title="Pull latest submissions from the database"
+              className="px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:text-white bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/60 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Syncing…' : 'Refresh'}</span>
+            </button>
+            {lastSynced && (
+              <span className="text-[10px] text-slate-400 hidden lg:block">
+                Last synced: {lastSynced.toLocaleTimeString()}
+              </span>
+            )}
 
             <button
               onClick={() => setShowRubricEditor(true)}

@@ -882,6 +882,10 @@ export default function App() {
                   handleSetAppMode('portal');
                 }}
                 onOpenAnnexA={() => setShowAnnexAModal(true)}
+                onRefreshFromCloud={async () => {
+                  const merged = await syncAppraisalsFromSupabase();
+                  setSubmissions(merged);
+                }}
               />
             )}
 
