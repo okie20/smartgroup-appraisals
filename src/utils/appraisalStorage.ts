@@ -1,6 +1,6 @@
 import { AppraisalSubmission, Person, AllocatedGroup } from '../types';
 import { loadPerformanceRatings } from '../data/performanceRatings';
-import { supabase } from '../supabaseClient';
+import { supabase, supabaseConfigured } from '../supabaseClient';
 
 const STORAGE_KEY = 'smartgroup_appraisal_submissions_v1';
 
@@ -47,6 +47,7 @@ export function calculateAverageRating(ratings: Record<string, number>): number 
 // ─── Supabase sync ───────────────────────────────────────────────────────────
 
 export async function upsertAppraisalToSupabase(submission: AppraisalSubmission): Promise<void> {
+  if (!supabaseConfigured) return; // silently skip if not configured
   const { error } = await supabase
     .from('appraisals')
     .upsert(
@@ -82,6 +83,7 @@ export async function upsertAppraisalToSupabase(submission: AppraisalSubmission)
 }
 
 export async function syncAppraisalsFromSupabase(): Promise<Record<string, AppraisalSubmission>> {
+  if (!supabaseConfigured) return loadAppraisalsFromStorage(); // fall back to local
   try {
     const { data, error } = await supabase
       .from('appraisals')
