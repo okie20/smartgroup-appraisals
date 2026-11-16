@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Users,
   CheckCircle2,
   Clock,
   FileText,
@@ -9,8 +8,6 @@ import {
   ArrowRight,
   LogOut,
   Lock,
-  Copy,
-  Check,
   KeyRound,
   Smartphone,
 } from 'lucide-react';
@@ -29,6 +26,8 @@ interface AppraisalPortalViewProps {
   onSubmitFinal: (submission: AppraisalSubmission) => void;
   currentUserId: string | null;
   onSelectUser: (userId: string | null) => void;
+  /** True when the user arrived via their personal ?staff= link — locks them to their own dashboard */
+  lockedByDirectLink?: boolean;
 }
 
 export const AppraisalPortalView: React.FC<AppraisalPortalViewProps> = ({
@@ -40,6 +39,7 @@ export const AppraisalPortalView: React.FC<AppraisalPortalViewProps> = ({
   onSubmitFinal,
   currentUserId,
   onSelectUser,
+  lockedByDirectLink = false,
 }) => {
   const [loginSearch, setLoginSearch] = useState('');
   const [selectedDeptFilter, setSelectedDeptFilter] = useState('ALL');
@@ -140,6 +140,21 @@ export const AppraisalPortalView: React.FC<AppraisalPortalViewProps> = ({
 
   // ── Sign-in screen (no user selected) ──────────────────────────────────────
   if (!currentUser) {
+    // If they arrived via a direct link but no match was found, show a simple message
+    if (lockedByDirectLink) {
+      return (
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="bg-white border border-slate-200 rounded-xl p-8 max-w-sm text-center shadow-sm">
+            <div className="text-3xl mb-3">🔒</div>
+            <h2 className="text-base font-black text-slate-900 mb-2">Link not recognised</h2>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Your direct link could not be matched to a staff member. Please contact HR for a new link.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-6">
         {/* Banner */}
@@ -291,7 +306,6 @@ export const AppraisalPortalView: React.FC<AppraisalPortalViewProps> = ({
 
   // ── Logged-in workspace ─────────────────────────────────────────────────────
   const myAnnexRule = getRevieweeAnnexRule(currentUser);
-  const directLink = getDirectLink(currentUser.id);
 
   return (
     <div className="space-y-6 animate-in fade-in">
@@ -334,40 +348,17 @@ export const AppraisalPortalView: React.FC<AppraisalPortalViewProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={() => onSelectUser(null)}
-            className="px-4 py-2 text-xs font-bold text-slate-200 hover:text-white bg-white/10 hover:bg-white/15 border border-white/20 rounded-xl transition-all flex items-center gap-2 cursor-pointer backdrop-blur-sm self-start md:self-auto shrink-0"
-          >
-            <LogOut className="w-4 h-4 text-slate-300" />
-            Sign Out
-          </button>
-        </div>
-      </div>
-
-      {/* Direct link banner */}
-      <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs">
-        <div className="flex items-start sm:items-center gap-2.5 text-slate-700">
-          <KeyRound className="w-4 h-4 text-[#FFC700] shrink-0" />
-          <div>
-            <span className="font-semibold text-slate-900">Your Personal Direct Link:</span>{' '}
-            <code className="text-[11px] font-mono text-indigo-700 bg-slate-50 px-2 py-0.5 rounded border border-slate-200 break-all select-all">
-              {directLink}
-            </code>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Bookmark this to return to your workspace instantly without signing in again.
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={() => handleCopyLink(currentUser.id)}
-          className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-800 transition-colors flex items-center gap-1.5 shrink-0 self-start sm:self-auto cursor-pointer"
-        >
-          {copiedId === currentUser.id ? (
-            <><Check className="w-3.5 h-3.5 text-emerald-600" /><span className="text-emerald-700">Copied!</span></>
-          ) : (
-            <><Copy className="w-3.5 h-3.5 text-slate-500" /><span>Copy Link</span></>
+          {/* Only show sign-out when NOT locked by a direct link */}
+          {!lockedByDirectLink && (
+            <button
+              onClick={() => onSelectUser(null)}
+              className="px-4 py-2 text-xs font-bold text-slate-200 hover:text-white bg-white/10 hover:bg-white/15 border border-white/20 rounded-xl transition-all flex items-center gap-2 cursor-pointer backdrop-blur-sm self-start md:self-auto shrink-0"
+            >
+              <LogOut className="w-4 h-4 text-slate-300" />
+              Sign Out
+            </button>
           )}
-        </button>
+        </div>
       </div>
 
       {/* Progress summary */}

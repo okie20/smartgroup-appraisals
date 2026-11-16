@@ -181,6 +181,10 @@ export default function App() {
     }
   });
 
+  // True when the session was started from a direct ?staff= link — locks the portal
+  // to that one person so they cannot sign out and pick someone else
+  const [lockedByDirectLink, setLockedByDirectLink] = useState(false);
+
   const [config, setConfig] = useState<GroupingConfig>({
     targetGroupSize: 7,
     minGroupSize: 6,
@@ -239,6 +243,7 @@ export default function App() {
           setUserSession(empSession);
           setCurrentPortalUserId(matched.id);
           setAppMode('portal');
+          setLockedByDirectLink(true); // lock — arrived via personal link
           localStorage.setItem('smartgroup_auth_session', JSON.stringify({ type: 'employee', personId: matched.id }));
           localStorage.setItem('smartgroup_active_user_id', matched.id);
           showNotification(`Welcome back, ${matched.name}!`);
@@ -834,6 +839,7 @@ export default function App() {
             onSubmitFinal={handleSubmitFinal}
             currentUserId={currentPortalUserId}
             onSelectUser={handleSelectPortalUser}
+            lockedByDirectLink={lockedByDirectLink}
           />
         )}
 
