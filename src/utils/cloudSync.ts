@@ -16,61 +16,62 @@ import { Person, DepartmentCluster, AllocatedGroup } from '../types';
 
 const SINGLETON_ID = 'singleton';
 
+// Timeout wrapper — prevents cloud calls hanging the UI
+function withTimeout<T>(promise: Promise<T>, ms = 8000): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Cloud sync timeout after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
 // ─── Roster ──────────────────────────────────────────────────────────────────
 
 export async function saveRosterToCloud(people: Person[]): Promise<void> {
-  const { error } = await supabase
-    .from('roster')
-    .upsert([{ id: SINGLETON_ID, data: people, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-  if (error) console.error('Failed to save roster to Supabase:', error.message);
+  try {
+    await withTimeout(supabase.from('roster').upsert([{ id: SINGLETON_ID, data: people, updated_at: new Date().toISOString() }], { onConflict: 'id' }));
+  } catch (e) { console.error('saveRosterToCloud failed:', e); }
 }
 
 export async function loadRosterFromCloud(): Promise<Person[] | null> {
-  const { data, error } = await supabase
-    .from('roster')
-    .select('data')
-    .eq('id', SINGLETON_ID)
-    .maybeSingle();
-  if (error) { console.error('Failed to load roster from Supabase:', error.message); return null; }
-  return (data?.data as Person[]) ?? null;
+  try {
+    const { data, error } = await withTimeout(supabase.from('roster').select('data').eq('id', SINGLETON_ID).maybeSingle()) as { data: any; error: any };
+    if (error) { console.error('loadRosterFromCloud failed:', error.message); return null; }
+    return (data?.data as Person[]) ?? null;
+  } catch (e) { console.error('loadRosterFromCloud timeout:', e); return null; }
 }
 
 // ─── Clusters ────────────────────────────────────────────────────────────────
 
 export async function saveClustersToCloud(clusters: DepartmentCluster[]): Promise<void> {
-  const { error } = await supabase
-    .from('clusters')
-    .upsert([{ id: SINGLETON_ID, data: clusters, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-  if (error) console.error('Failed to save clusters to Supabase:', error.message);
+  try {
+    await withTimeout(supabase.from('clusters').upsert([{ id: SINGLETON_ID, data: clusters, updated_at: new Date().toISOString() }], { onConflict: 'id' }));
+  } catch (e) { console.error('saveClustersToCloud failed:', e); }
 }
 
 export async function loadClustersFromCloud(): Promise<DepartmentCluster[] | null> {
-  const { data, error } = await supabase
-    .from('clusters')
-    .select('data')
-    .eq('id', SINGLETON_ID)
-    .maybeSingle();
-  if (error) { console.error('Failed to load clusters from Supabase:', error.message); return null; }
-  return (data?.data as DepartmentCluster[]) ?? null;
+  try {
+    const { data, error } = await withTimeout(supabase.from('clusters').select('data').eq('id', SINGLETON_ID).maybeSingle()) as { data: any; error: any };
+    if (error) { console.error('loadClustersFromCloud failed:', error.message); return null; }
+    return (data?.data as DepartmentCluster[]) ?? null;
+  } catch (e) { console.error('loadClustersFromCloud timeout:', e); return null; }
 }
 
 // ─── Custom Groups ────────────────────────────────────────────────────────────
 
 export async function saveCustomGroupsToCloud(groups: AllocatedGroup[]): Promise<void> {
-  const { error } = await supabase
-    .from('custom_groups')
-    .upsert([{ id: SINGLETON_ID, data: groups, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-  if (error) console.error('Failed to save custom groups to Supabase:', error.message);
+  try {
+    await withTimeout(supabase.from('custom_groups').upsert([{ id: SINGLETON_ID, data: groups, updated_at: new Date().toISOString() }], { onConflict: 'id' }));
+  } catch (e) { console.error('saveCustomGroupsToCloud failed:', e); }
 }
 
 export async function loadCustomGroupsFromCloud(): Promise<AllocatedGroup[] | null> {
-  const { data, error } = await supabase
-    .from('custom_groups')
-    .select('data')
-    .eq('id', SINGLETON_ID)
-    .maybeSingle();
-  if (error) { console.error('Failed to load custom groups from Supabase:', error.message); return null; }
-  return (data?.data as AllocatedGroup[]) ?? null;
+  try {
+    const { data, error } = await withTimeout(supabase.from('custom_groups').select('data').eq('id', SINGLETON_ID).maybeSingle()) as { data: any; error: any };
+    if (error) { console.error('loadCustomGroupsFromCloud failed:', error.message); return null; }
+    return (data?.data as AllocatedGroup[]) ?? null;
+  } catch (e) { console.error('loadCustomGroupsFromCloud timeout:', e); return null; }
 }
 
 // ─── Full app sync on mount ───────────────────────────────────────────────────

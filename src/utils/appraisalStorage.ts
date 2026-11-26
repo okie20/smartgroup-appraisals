@@ -4,7 +4,17 @@ import { supabase, supabaseConfigured } from '../supabaseClient';
 
 const STORAGE_KEY = 'smartgroup_appraisal_submissions_v1';
 
-// ─── Local Storage (fast cache) ─────────────────────────────────────────────
+// ─── Timeout wrapper — prevents any Supabase call from hanging the UI ─────────
+function withTimeout<T>(promise: Promise<T>, ms = 8000): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Supabase timeout after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
+// ─── Local Storage ────────────────────────────────────────────────────────────
 
 export function loadAppraisalsFromStorage(): Record<string, AppraisalSubmission> {
   try {
@@ -44,51 +54,46 @@ export function calculateAverageRating(ratings: Record<string, number>): number 
   return Number((sum / values.length).toFixed(1));
 }
 
-// ─── Supabase sync ───────────────────────────────────────────────────────────
+// ─── Supabase sync ────────────────────────────────────────────────────────────
 
 export async function upsertAppraisalToSupabase(submission: AppraisalSubmission): Promise<void> {
-  if (!supabaseConfigured) return; // silently skip if not configured
-  const { error } = await supabase
-    .from('appraisals')
-    .upsert(
-      [
-        {
-          id: submission.id,
-          reviewer_id: submission.reviewerId,
-          reviewee_id: submission.revieweeId,
-          group_id: submission.groupId,
-          is_self_appraisal: submission.isSelfAppraisal ?? false,
-          relationship: submission.relationship ?? null,
-          ratings: submission.ratings,
-          rating_comments: submission.ratingComments ?? {},
-          key_achievements: submission.keyAchievements ?? '',
-          final_comment: submission.finalComment ?? '',
-          feedback_strengths: submission.feedback?.strengths ?? '',
-          feedback_improvements: submission.feedback?.improvements ?? '',
-          feedback_specific_observation: submission.feedback?.specificObservation ?? '',
-          status: submission.status,
-          updated_at: submission.updatedAt,
-          submitted_at: submission.submittedAt ?? null,
-          annex_rule_title: submission.annexRuleTitle ?? null,
-          annex_slot_name: submission.annexSlotName ?? null,
-        },
-      ],
-      { onConflict: 'id' }
+  if (!supabaseConfigured) return;
+  try {
+    await withTimeout(
+      supabase.from('appraisals').upsert([{
+        id: submission.id,
+        reviewer_id: submission.reviewerId,
+        reviewee_id: submission.revieweeId,
+        group_id: submission.groupId,
+        is_self_appraisal: submission.isSelfAppraisal ?? false,
+        relationship: submission.relationship ?? null,
+        ratings: submission.ratings,
+        rating_comments: submission.ratingComments ?? {},
+        key_achievements: submission.keyAchievements ?? '',
+        final_comment: submission.finalComment ?? '',
+        feedback_strengths: submission.feedback?.strengths ?? '',
+        feedback_improvements: submission.feedback?.improvements ?? '',
+        feedback_specific_observation: submission.feedback?.specificObservation ?? '',
+        status: submission.status,
+        updated_at: submission.updatedAt,
+        submitted_at: submission.submittedAt ?? null,
+        annex_rule_title: submission.annexRuleTitle ?? null,
+        annex_slot_name: submission.annexSlotName ?? null,
+      }], { onConflict: 'id' })
     );
-
-  if (error) {
-    console.error('Supabase upsert error:', error.message);
-    throw error;
+  } catch (err) {
+    console.error('Supabase upsert failed (saved locally):', err);
+    // Don't throw — submission is already saved to localStorage
   }
 }
 
 export async function syncAppraisalsFromSupabase(): Promise<Record<string, AppraisalSubmission>> {
-  if (!supabaseConfigured) return loadAppraisalsFromStorage(); // fall back to local
+  if (!supabaseConfigured) return loadAppraisalsFromStorage();
   try {
-    const { data, error } = await supabase
-      .from('appraisals')
-      .select('*')
-      .order('updated_at', { ascending: false });
+    const result = await withTimeout(
+      supabase.from('appraisals').select('*').order('updated_at', { ascending: false })
+    );
+    const { data, error } = result as { data: any[] | null; error: any };
 
     if (error) {
       console.error('Supabase load error:', error.message);
@@ -134,7 +139,7 @@ export async function syncAppraisalsFromSupabase(): Promise<Record<string, Appra
   }
 }
 
-// ─── Mock seed (demo data) ───────────────────────────────────────────────────
+// ─── Mock seed (demo data) ────────────────────────────────────────────────────
 
 export function seedRealisticAppraisals(
   people: Person[],
@@ -176,7 +181,7 @@ export function seedRealisticAppraisals(
       if (updated[key]) continue;
 
       const isSubmitted = Math.random() > 0.15;
-      const baseRating = 5 + Math.floor(Math.random() * 5); // 5-9 on 1-10 scale
+      const baseRating = 5 + Math.floor(Math.random() * 5);
 
       const ratings: Record<string, number> = {};
       for (const item of perfItems) {
@@ -185,17 +190,13 @@ export function seedRealisticAppraisals(
       }
 
       const ratingComments: Record<string, string> = {};
-      // Add a comment for about 60% of items
       for (const item of perfItems) {
-        if (Math.random() > 0.4) {
-          ratingComments[item.id] = '';
-        }
+        if (Math.random() > 0.4) ratingComments[item.id] = '';
       }
 
       const achievements = sampleAchievements[Math.floor(Math.random() * sampleAchievements.length)];
       const finalComment = sampleFinalComments[Math.floor(Math.random() * sampleFinalComments.length)];
       const submissionDate = new Date(now.getTime() - Math.random() * 7 * 86400000);
-
       const relationships = ['Manager / Supervisor', 'Peer / Colleague', 'Direct Report'] as const;
 
       updated[key] = {
