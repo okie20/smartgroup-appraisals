@@ -79,7 +79,7 @@ export async function upsertAppraisalToSupabase(submission: AppraisalSubmission)
         submitted_at: submission.submittedAt ?? null,
         annex_rule_title: submission.annexRuleTitle ?? null,
         annex_slot_name: submission.annexSlotName ?? null,
-      }], { onConflict: 'id' })
+      }], { onConflict: 'id' }).then(r => r)
     );
   } catch (err) {
     console.error('Supabase upsert failed (saved locally):', err);
@@ -90,10 +90,14 @@ export async function upsertAppraisalToSupabase(submission: AppraisalSubmission)
 export async function syncAppraisalsFromSupabase(): Promise<Record<string, AppraisalSubmission>> {
   if (!supabaseConfigured) return loadAppraisalsFromStorage();
   try {
-    const result = await withTimeout(
-      supabase.from('appraisals').select('*').order('updated_at', { ascending: false })
-    );
-    const { data, error } = result as { data: any[] | null; error: any };
+    // Execute the query first, then apply timeout to the resulting promise
+    const queryPromise = supabase
+      .from('appraisals')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .then((result) => result); // convert thenable to real Promise
+
+    const { data, error } = await withTimeout(queryPromise);
 
     if (error) {
       console.error('Supabase load error:', error.message);
