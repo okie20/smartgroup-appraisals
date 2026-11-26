@@ -68,13 +68,14 @@ export const HRAppraisalDashboard: React.FC<HRAppraisalDashboardProps> = ({
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
 
   // Auto-refresh every 60 seconds while HR dashboard is open
+  // Delay first run by 2s so the page renders immediately without waiting
   useEffect(() => {
     const run = () => {
-      onRefreshFromCloud().then(() => setLastSynced(new Date()));
+      onRefreshFromCloud().then(() => setLastSynced(new Date())).catch(() => {});
     };
-    run(); // immediate on mount
+    const initial = setTimeout(run, 2000); // let page render first
     const interval = setInterval(run, 60000);
-    return () => clearInterval(interval);
+    return () => { clearTimeout(initial); clearInterval(interval); };
   }, [onRefreshFromCloud]);
 
   const handleManualRefresh = async () => {

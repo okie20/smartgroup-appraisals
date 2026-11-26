@@ -116,47 +116,43 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [people]);
 
-  // On mount: sync from Supabase and merge with local cache so all devices stay in sync
+  // On mount: sync from Supabase after a short delay so the app renders first
   useEffect(() => {
-    syncAppraisalsFromSupabase().then((merged) => {
-      setSubmissions(merged);
-    });
+    const timer = setTimeout(() => {
+      syncAppraisalsFromSupabase().then((merged) => {
+        setSubmissions(merged);
+      }).catch(() => {});
+    }, 1000);
+    return () => clearTimeout(timer);
   }, []);
 
-  // On mount: load roster, clusters and custom groups from Supabase so all devices see the same data
-  // If Supabase has data → use it (preserves any edits made on the live site)
-  // If Supabase is empty → seed DEFAULT_ROSTER once and push it up
+  // On mount: load roster, clusters and custom groups from Supabase
   useEffect(() => {
-    loadAllFromCloud().then(({ people: cloudPeople, clusters: cloudClusters, customGroups: cloudGroups }) => {
-
-      if (cloudPeople && cloudPeople.length > 0) {
-        // Cloud has data — always use it, never overwrite with defaults
-        const unique = ensureUniqueEmployeeIds(cloudPeople);
-        setPeople(unique);
-        localStorage.setItem('smartgroup_custom_roster', JSON.stringify(unique));
-        localStorage.setItem('smartgroup_roster_reset_v8', 'true'); // mark as done
-      } else {
-        // Cloud is empty — seed with DEFAULT_ROSTER and push up
-        const roster = ensureUniqueEmployeeIds(DEFAULT_ROSTER);
-        setPeople(roster);
-        saveRosterToCloud(roster);
-        localStorage.setItem('smartgroup_custom_roster', JSON.stringify(roster));
-        localStorage.setItem('smartgroup_roster_reset_v8', 'true');
-      }
-
-      if (cloudClusters && cloudClusters.length > 0) {
-        setClusters(cloudClusters);
-      }
-
-      if (cloudGroups && cloudGroups.length > 0) {
-        setCustomGroups(cloudGroups);
-        localStorage.setItem('smartgroup_custom_groups_v2', JSON.stringify(cloudGroups));
-      } else {
-        // Clear stale local groups so panels regenerate cleanly
-        localStorage.removeItem('smartgroup_custom_groups_v2');
-        setCustomGroups(null);
-      }
-    });
+    const timer = setTimeout(() => {
+      loadAllFromCloud().then(({ people: cloudPeople, clusters: cloudClusters, customGroups: cloudGroups }) => {
+        if (cloudPeople && cloudPeople.length > 0) {
+          const unique = ensureUniqueEmployeeIds(cloudPeople);
+          setPeople(unique);
+          localStorage.setItem('smartgroup_custom_roster', JSON.stringify(unique));
+          localStorage.setItem('smartgroup_roster_reset_v8', 'true');
+        } else {
+          const roster = ensureUniqueEmployeeIds(DEFAULT_ROSTER);
+          setPeople(roster);
+          saveRosterToCloud(roster);
+          localStorage.setItem('smartgroup_custom_roster', JSON.stringify(roster));
+          localStorage.setItem('smartgroup_roster_reset_v8', 'true');
+        }
+        if (cloudClusters && cloudClusters.length > 0) setClusters(cloudClusters);
+        if (cloudGroups && cloudGroups.length > 0) {
+          setCustomGroups(cloudGroups);
+          localStorage.setItem('smartgroup_custom_groups_v2', JSON.stringify(cloudGroups));
+        } else {
+          localStorage.removeItem('smartgroup_custom_groups_v2');
+          setCustomGroups(null);
+        }
+      }).catch(() => {});
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   // Sync clusters to Supabase whenever they change
