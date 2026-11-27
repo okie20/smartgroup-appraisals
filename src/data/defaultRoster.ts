@@ -258,6 +258,7 @@ export const DEFAULT_ROSTER: Person[] = [
 
   // ── MOWT ────────────────────────────────────────────────────────────────────
   { id: 'EMP-MW1', name: 'David Ruhinda',           department: 'MOWT',                               role: 'Ministry Rep',           email: 'david.ruhinda@org.project',          facility: 'Kampala',  isSupervisor: false },
+  { id: 'EMP-MW2', name: 'Masiko Brian',             department: 'MOWT',                               role: 'Ministry Rep',           email: 'masiko.brian@org.project',           facility: 'Kampala',  isSupervisor: false },
 
   // ── Finance & Accounts ───────────────────────────────────────────────────────
   { id: 'EMP-FA1', name: 'Kato Andrew',             department: 'Finance & Accounts',                 role: 'Project Accountant',     email: 'kato.andrew@org.project',            facility: 'Kampala',  isSupervisor: false },
